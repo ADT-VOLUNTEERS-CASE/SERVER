@@ -7,12 +7,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
 @Table(name = "users",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_users_phone", columnNames = "phoneNumber"),
+                @UniqueConstraint(name = "uk_users_email", columnNames = "email")
+        },
         indexes = {
                 @Index(name = "idx_user_phone", columnList = "phoneNumber"),
                 @Index(name = "idx_user_email", columnList = "email")
@@ -49,7 +55,18 @@ public class UserEntity{
     @Column(name = "email", unique = true, nullable = false)
     private String email;                                       //email, валидация по RFC 5322
 
-    @OneToOne(mappedBy = "userId", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserAuthEntity userAuth;                            //связь один к одному с таблицей user_auth, при удалении записи в users удалиться соответствуйщий user_auth
 
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "user_tags",
+            joinColumns = @JoinColumn(name = "userId"),
+            inverseJoinColumns = @JoinColumn(name = "tagId"),
+            uniqueConstraints = @UniqueConstraint(
+                    name = "uk_user_tag",
+                    columnNames = {"userId", "tagId"}
+            )
+    )
+    private Set<TagEntity> tags;                                     //тег, связь многие ко многим
 }

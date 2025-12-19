@@ -20,7 +20,7 @@ public class UserAuthEntity {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private UserEntity userId;                                          //связть один к одному с таблицей users
+    private UserEntity user;                                          //связть один к одному с таблицей users
 
     @Column(nullable = false)
     private String passwordHash;
