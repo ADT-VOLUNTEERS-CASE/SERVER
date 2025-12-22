@@ -73,6 +73,17 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.authenticate(request));
     }
 
+    @Operation(
+            summary = "Обновление токенов",
+            description = "Возвращает новую пару jwt токенов",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешное обновление токенов"),
+                    @ApiResponse(responseCode = "400", description = "Невалидные данные",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "403", description = "Переданный refresh token недействителен",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
     @PostMapping("/refreshtoken")
     public ResponseEntity<AuthenticationResponse> refreshToken(
             @Valid
