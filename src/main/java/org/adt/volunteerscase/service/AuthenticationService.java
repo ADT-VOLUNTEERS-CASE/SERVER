@@ -5,10 +5,13 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.auth.AuthenticationRequest;
 import org.adt.volunteerscase.dto.auth.AuthenticationResponse;
 import org.adt.volunteerscase.dto.auth.RegisterRequest;
+import org.adt.volunteerscase.dto.auth.TokenRefreshRequest;
+import org.adt.volunteerscase.entity.RefreshTokenEntity;
 import org.adt.volunteerscase.entity.user.UserAuthEntity;
 import org.adt.volunteerscase.entity.user.UserDetailsImpl;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.exception.InvalidPasswordException;
+import org.adt.volunteerscase.exception.RefreshTokenExcepion;
 import org.adt.volunteerscase.exception.UserAlreadyExistsException;
 import org.adt.volunteerscase.exception.UserNotFoundException;
 import org.adt.volunteerscase.repository.UserRepository;
@@ -27,6 +30,8 @@ public class AuthenticationService {
     private final JwtService jwtService;
 
     private final AuthenticationManager authenticationManager;
+
+    private final RefreshTokenService refreshTokenService;
 
     public AuthenticationResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -51,8 +56,27 @@ public class AuthenticationService {
         userRepository.save(user);
         var jwtToken = jwtService.generateAccessToken(new UserDetailsImpl(user, userAuth));
 
+        var refreshToken = refreshTokenService.createRefreshToken(user).getRefreshToken();
+
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
+                .refreshToken(refreshToken)
+                .build();
+    }
+
+    public AuthenticationResponse refreshToken(TokenRefreshRequest request) {
+        RefreshTokenEntity oldToken = refreshTokenService.findByToken(request.getRefreshToken())
+                .orElseThrow(() -> new RefreshTokenExcepion("Refresh token not found"));
+
+        UserEntity user = oldToken.getUser();
+
+        var jwtToken = jwtService.generateAccessToken(new UserDetailsImpl(user, user.getUserAuth()));
+
+        var refreshToken = refreshTokenService.rotateRefreshToken(oldToken).getRefreshToken();
+
+        return AuthenticationResponse.builder()
+                .accessToken(jwtToken)
+                .refreshToken(refreshToken)
                 .build();
     }
 
@@ -71,8 +95,12 @@ public class AuthenticationService {
             var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
 
             var jwtToken = jwtService.generateAccessToken(new UserDetailsImpl(user, user.getUserAuth()));
+
+            var refreshToken = refreshTokenService.createRefreshToken(user).getRefreshToken();
+
             return AuthenticationResponse.builder()
                     .accessToken(jwtToken)
+                    .refreshToken(refreshToken)
                     .build();
         } catch (BadCredentialsException e) {
             throw new InvalidPasswordException("Invalid password");

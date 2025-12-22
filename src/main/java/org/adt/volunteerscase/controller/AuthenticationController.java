@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.auth.AuthenticationRequest;
 import org.adt.volunteerscase.dto.auth.AuthenticationResponse;
 import org.adt.volunteerscase.dto.auth.RegisterRequest;
+import org.adt.volunteerscase.dto.auth.TokenRefreshRequest;
 import org.adt.volunteerscase.service.AuthenticationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -70,5 +71,16 @@ public class AuthenticationController {
             @RequestBody AuthenticationRequest request
     ) {
         return ResponseEntity.ok(authenticationService.authenticate(request));
+    }
+
+    @PostMapping("/refreshtoken")
+    public ResponseEntity<AuthenticationResponse> refreshToken(
+            @Valid
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Токен обновления пользователя"
+            )
+            @RequestBody TokenRefreshRequest request
+            ) {
+        return ResponseEntity.ok(authenticationService.refreshToken(request));
     }
 }
