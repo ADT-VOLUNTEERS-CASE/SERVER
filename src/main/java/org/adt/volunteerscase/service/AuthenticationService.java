@@ -49,7 +49,7 @@ public class AuthenticationService {
                 .build();
         userAuth.setUser(user);
         userRepository.save(user);
-        var jwtToken = jwtService.generateToken(new UserDetailsImpl(user, userAuth));
+        var jwtToken = jwtService.generateAccessToken(new UserDetailsImpl(user, userAuth));
 
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
@@ -70,7 +70,7 @@ public class AuthenticationService {
             );
             var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
 
-            var jwtToken = jwtService.generateToken(new UserDetailsImpl(user, user.getUserAuth()));
+            var jwtToken = jwtService.generateAccessToken(new UserDetailsImpl(user, user.getUserAuth()));
             return AuthenticationResponse.builder()
                     .accessToken(jwtToken)
                     .build();
