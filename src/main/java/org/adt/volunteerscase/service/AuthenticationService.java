@@ -33,6 +33,17 @@ public class AuthenticationService {
 
     private final RefreshTokenService refreshTokenService;
 
+    /**
+     * Register a new user and issue authentication tokens.
+     *
+     * Creates and persists the user and associated authentication record after
+     * validating that the provided email and phone number are not already in use,
+     * then returns an access token and a refresh token.
+     *
+     * @param request registration details (firstname, lastname, patronymic, phoneNumber, email, password)
+     * @return an AuthenticationResponse containing an access token and a refresh token
+     * @throws UserAlreadyExistsException if a user with the given email or phone number already exists
+     */
     public AuthenticationResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("User with email " + request.getEmail() + " already exists");
@@ -64,6 +75,13 @@ public class AuthenticationService {
                 .build();
     }
 
+    /**
+     * Refreshes authentication tokens using an existing refresh token.
+     *
+     * @param request the token refresh request containing the refresh token to validate and rotate
+     * @return an AuthenticationResponse containing a newly issued access token and the rotated refresh token
+     * @throws RefreshTokenException if the provided refresh token is not found
+     */
     public AuthenticationResponse refreshToken(TokenRefreshRequest request) {
         RefreshTokenEntity oldToken = refreshTokenService.findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new RefreshTokenException("Refresh token not found"));
@@ -80,6 +98,14 @@ public class AuthenticationService {
                 .build();
     }
 
+    /**
+     * Authenticates a user by email and password and issues new access and refresh tokens.
+     *
+     * @param request the authentication request containing the user's email and password
+     * @return an AuthenticationResponse containing a freshly generated access token and refresh token
+     * @throws UserNotFoundException if no user exists with the provided email
+     * @throws InvalidPasswordException if the provided password is incorrect
+     */
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         String email = request.getEmail();
         if (!userRepository.existsByEmail(email)) {

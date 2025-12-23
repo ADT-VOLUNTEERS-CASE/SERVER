@@ -28,6 +28,12 @@ public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
 
+    /**
+     * Registers a new user and returns JWT authentication data.
+     *
+     * @param request registration request containing user credentials and profile details
+     * @return an AuthenticationResponse containing access and refresh tokens and associated user information
+     */
     @Operation(
             summary = "регистрация нового пользователя",
             description = "Создаёт нового пользователя  и возвращает jwt токены",
@@ -49,6 +55,12 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 
+    /**
+     * Authenticate a user and issue JWT access and refresh tokens.
+     *
+     * @param request the user's authentication credentials (e.g., email and password)
+     * @return an AuthenticationResponse containing issued access and refresh tokens
+     */
     @Operation(
             summary = "аутентификация пользователя",
             description = "Возвращает jwt токены, для доступа к api",
@@ -73,6 +85,14 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.authenticate(request));
     }
 
+    /**
+     * Refreshes JWT authentication tokens.
+     *
+     * Exchanges a valid refresh token for a new access token and refresh token pair.
+     *
+     * @param request the token refresh payload containing the refresh token
+     * @return the new access and refresh tokens and related authentication data in an AuthenticationResponse wrapped in a ResponseEntity
+     */
     @Operation(
             summary = "Обновление токенов",
             description = "Возвращает новую пару jwt токенов",
