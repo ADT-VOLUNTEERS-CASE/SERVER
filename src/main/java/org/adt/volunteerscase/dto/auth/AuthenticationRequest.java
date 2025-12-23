@@ -21,6 +21,6 @@ public class AuthenticationRequest {
 
     @NotBlank(message = "password is blank")
     @Schema(description = "пароль пользователя")
-    String password;
+    private String password;
 
 }
