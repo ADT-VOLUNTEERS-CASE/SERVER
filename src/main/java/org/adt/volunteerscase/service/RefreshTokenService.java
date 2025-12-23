@@ -3,9 +3,10 @@ package org.adt.volunteerscase.service;
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.entity.RefreshTokenEntity;
 import org.adt.volunteerscase.entity.user.UserEntity;
-import org.adt.volunteerscase.exception.RefreshTokenExcepion;
+import org.adt.volunteerscase.exception.RefreshTokenException;
 import org.adt.volunteerscase.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,15 +18,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class RefreshTokenService {
-    @Autowired
+
     private final RefreshTokenRepository refreshTokenRepository;
+
+    @Value("${jwt.refresh-token.expiration.sec}")
+    private Integer refreshTokenExpirationSeconds;
 
     public RefreshTokenEntity createRefreshToken(UserEntity user) {
         deleteAllByUser(user);
 
         RefreshTokenEntity refreshToken = RefreshTokenEntity.builder()
                 .createdAt(LocalDateTime.now())
-                .expiryAt(LocalDateTime.now().plusSeconds(60 * 60 * 24 * 7))
+                .expiryAt(LocalDateTime.now().plusSeconds(refreshTokenExpirationSeconds))
                 .refreshToken(UUID.randomUUID().toString())
                 .user(user)
                 .build();
@@ -46,7 +50,7 @@ public class RefreshTokenService {
     public RefreshTokenEntity verifyExpiration(RefreshTokenEntity refreshToken) {
         if (refreshToken.getExpiryAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(refreshToken);
-            throw new RefreshTokenExcepion("Refresh token expired");
+            throw new RefreshTokenException("Refresh token expired");
         }
         return refreshToken;
     }

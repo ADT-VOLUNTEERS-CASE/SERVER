@@ -17,8 +17,12 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
+
     @Value("${SECRET_KEY}")
     private String SECRET_KEY;
+
+    @Value("${jwt.access-token.expiration.ms}")
+    private Integer accessTokenExpirationMs;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -49,7 +53,7 @@ public class JwtService {
                 .claims(extractClaims)
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24)) // TODO: Move to config
+                .expiration(new Date(System.currentTimeMillis() + accessTokenExpirationMs))
                 .signWith(getSignKey(), Jwts.SIG.HS256)
                 .compact();
     }

@@ -17,21 +17,26 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidPasswordException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidPassword(InvalidPasswordException ex){
+    public ResponseEntity<ErrorResponse> handleInvalidPassword(InvalidPasswordException ex) {
         ErrorResponse error = new ErrorResponse("INVALID_PASSWORD", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleInvalidValidation(MethodArgumentNotValidException ex){
+    public ResponseEntity<ErrorResponse> handleInvalidValidation(MethodArgumentNotValidException ex) {
         ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex){
+    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
         ErrorResponse error = new ErrorResponse("USER_ALREADY_EXISTS", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(RefreshTokenException.class)
+    public ResponseEntity<ErrorResponse> handleRefreshTokenExpired(RefreshTokenException ex) {
+        ErrorResponse error = new ErrorResponse("REFRESH_TOKEN_EXPIRED", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
 }

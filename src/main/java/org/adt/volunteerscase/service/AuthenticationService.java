@@ -11,7 +11,7 @@ import org.adt.volunteerscase.entity.user.UserAuthEntity;
 import org.adt.volunteerscase.entity.user.UserDetailsImpl;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.exception.InvalidPasswordException;
-import org.adt.volunteerscase.exception.RefreshTokenExcepion;
+import org.adt.volunteerscase.exception.RefreshTokenException;
 import org.adt.volunteerscase.exception.UserAlreadyExistsException;
 import org.adt.volunteerscase.exception.UserNotFoundException;
 import org.adt.volunteerscase.repository.UserRepository;
@@ -66,7 +66,7 @@ public class AuthenticationService {
 
     public AuthenticationResponse refreshToken(TokenRefreshRequest request) {
         RefreshTokenEntity oldToken = refreshTokenService.findByToken(request.getRefreshToken())
-                .orElseThrow(() -> new RefreshTokenExcepion("Refresh token not found"));
+                .orElseThrow(() -> new RefreshTokenException("Refresh token not found"));
 
         UserEntity user = oldToken.getUser();
 
@@ -92,7 +92,7 @@ public class AuthenticationService {
                             request.getPassword()
                     )
             );
-            var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+            var user = userRepository.findByEmailWithAuth(request.getEmail()).orElseThrow();
 
             var jwtToken = jwtService.generateAccessToken(new UserDetailsImpl(user, user.getUserAuth()));
 
