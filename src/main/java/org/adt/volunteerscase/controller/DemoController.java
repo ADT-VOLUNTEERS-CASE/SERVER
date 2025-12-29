@@ -1,5 +1,6 @@
 package org.adt.volunteerscase.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,11 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/demo")
+@RequestMapping("/api/v1")
 @SecurityRequirement(name = "jwtAuth")
 public class DemoController {
 
-    @GetMapping
+    @Operation(
+            summary = "ping pong"
+    )
+    @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("pong");
     }
