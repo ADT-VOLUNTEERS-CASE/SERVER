@@ -19,6 +19,21 @@ public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
+    /**
+     * Configures and returns the application's security filter chain.
+     *
+     * Configured behavior:
+     * - CSRF protection disabled.
+     * - Public access allowed for authentication and API documentation endpoints.
+     * - All other requests require authentication.
+     * - Session management set to STATELESS.
+     * - Uses the configured AuthenticationProvider and inserts the JWT authentication filter
+     *   before the UsernamePasswordAuthenticationFilter.
+     *
+     * @param http the HttpSecurity instance to configure
+     * @return the configured SecurityFilterChain
+     * @throws Exception if an error occurs while building the security filter chain
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)

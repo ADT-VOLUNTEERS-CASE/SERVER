@@ -13,10 +13,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 @SecurityRequirement(name = "jwtAuth")
 public class DemoController {
-
+    /**
+     * Responds to a GET request with a simple "pong" message.
+     *
+     * @return a ResponseEntity containing the body "pong" and HTTP status 200 (OK)
+     */
+  
     @Operation(
             summary = "ping pong"
     )
+  
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("pong");
