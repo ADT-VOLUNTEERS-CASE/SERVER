@@ -1,4 +1,4 @@
-package org.adt.volunteerscase.entity;
+package org.adt.volunteerscase.entity.user;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-package org.adt.volunteerscase.entity;
+package org.adt.volunteerscase.entity.user;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.adt.volunteerscase.entity.TagEntity;
 
 import java.util.Set;
 
@@ -30,12 +31,12 @@ public class UserEntity{
     @Column(name = "userId")
     private Integer userId;
 
-    @NotBlank(message = "First name is null")
+    @NotBlank(message = "Firstname is null")
     @Size(max = 100, message = "First name max length is 100")
     @Column(name = "firstname", length = 100, nullable = false)
     private String firstname;                                   //имя, длина <= 100, не null,
 
-    @NotBlank(message = "Last name is null")
+    @NotBlank(message = "Lastname is null")
     @Size(max = 100, message = "Last name max length is 100")
     @Column(name = "lastname", length = 100, nullable = false)
     private String lastname;                                    //фамилия, длина <= 100, не null
