@@ -1,12 +1,15 @@
 package org.adt.volunteerscase.unit.service;
 
+import org.adt.volunteerscase.dto.auth.AuthenticationRequest;
 import org.adt.volunteerscase.dto.auth.AuthenticationResponse;
 import org.adt.volunteerscase.dto.auth.RegisterRequest;
 import org.adt.volunteerscase.entity.RefreshTokenEntity;
 import org.adt.volunteerscase.entity.user.UserAuthEntity;
 import org.adt.volunteerscase.entity.user.UserDetailsImpl;
 import org.adt.volunteerscase.entity.user.UserEntity;
+import org.adt.volunteerscase.exception.InvalidPasswordException;
 import org.adt.volunteerscase.exception.UserAlreadyExistsException;
+import org.adt.volunteerscase.exception.UserNotFoundException;
 import org.adt.volunteerscase.repository.UserRepository;
 import org.adt.volunteerscase.service.AuthenticationService;
 import org.adt.volunteerscase.service.JwtService;
@@ -19,7 +22,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -57,7 +64,10 @@ public class AuthenticationServiceTest {
     private RegisterRequest existingEmailRequest;
     private RegisterRequest existingPhoneRequest;
 
-    // An existing user for tests with duplicates
+    private AuthenticationRequest validAuthRequest;
+    private AuthenticationRequest invalidEmailRequest;
+    private AuthenticationRequest invalidPasswordRequest;
+
     private UserEntity existingUser;
 
     @BeforeEach
@@ -101,10 +111,28 @@ public class AuthenticationServiceTest {
                 .build();
 
         existingUserAuth.setUser(existingUser);
+
+        validAuthRequest = AuthenticationRequest.builder()
+                .email("existing@example.com")
+                .password("CorrectPassword123!")
+                .build();
+
+        invalidEmailRequest = AuthenticationRequest.builder()
+                .email("nonexistent@example.com")
+                .password("AnyPassword")
+                .build();
+
+        invalidPasswordRequest = AuthenticationRequest.builder()
+                .email("existing@example.com")
+                .password("WrongPassword")
+                .build();
+
+
     }
 
 
 //----------------------------------   register method   ----------------------------------
+
     /**
      * Test 1: Successful registration of a new user
      * We check that the user is created successfully with unique data
@@ -141,7 +169,7 @@ public class AuthenticationServiceTest {
      * We check the email uniqueness validation
      */
     @Test
-    void register_shouldThrowException_whenEmailAlreadyExists(){
+    void register_shouldThrowException_whenEmailAlreadyExists() {
 
         when(userRepository.existsByEmail(existingEmailRequest.getEmail()))
                 .thenReturn(true);
@@ -160,7 +188,7 @@ public class AuthenticationServiceTest {
      * We check the validation of the uniqueness of the phone
      */
     @Test
-    void register_shouldThrowException_whenPhoneNumberAlreadyExists(){
+    void register_shouldThrowException_whenPhoneNumberAlreadyExists() {
         when(userRepository.existsByEmail(existingPhoneRequest.getEmail()))
                 .thenReturn(false);
 
@@ -181,7 +209,7 @@ public class AuthenticationServiceTest {
      * We check that the UserEntity is created with the correct fields
      */
     @Test
-    void register_shouldCreateUserWithCorrectData(){
+    void register_shouldCreateUserWithCorrectData() {
 
         when(userRepository.existsByEmail(anyString())).thenReturn(false);
         when(userRepository.existsByPhoneNumber(anyString())).thenReturn(false);
@@ -205,6 +233,96 @@ public class AuthenticationServiceTest {
         assertThat(savedUser.getUserAuth()).isNotNull();
         assertThat(savedUser.getUserAuth().getPasswordHash()).isEqualTo("encodedPass");
         assertThat(savedUser.getUserAuth().getUser()).isSameAs(savedUser);
+    }
+
+
+//----------------------------------   authenticate method   ----------------------------------
+
+
+    /**
+     * Test 1: Successful authentication with correct email and password
+     * We check that if the data is correct, the tokens are returned
+     */
+    @Test
+    void authenticate_shouldReturnTokens_whenCredentialsAreValid() {
+        when(userRepository.existsByEmail(validAuthRequest.getEmail()))
+                .thenReturn(true);
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(null);
+
+        when(userRepository.findByEmailWithAuth(validAuthRequest.getEmail()))
+                .thenReturn(Optional.of(existingUser));
+
+        when(jwtService.generateAccessToken(any(UserDetailsImpl.class)))
+                .thenReturn("jwtAccessToken");
+
+        RefreshTokenEntity refreshTokenEntity = RefreshTokenEntity.builder()
+                .refreshToken("refreshToken123")
+                .build();
+        when(refreshTokenService.createRefreshToken(existingUser))
+                .thenReturn(refreshTokenEntity);
+
+        AuthenticationResponse response = authenticationService.authenticate(validAuthRequest);
+
+        assertThat(response.getAccessToken()).isEqualTo("jwtAccessToken");
+        assertThat(response.getRefreshToken()).isEqualTo("refreshToken123"); //TODO: заполнить все поля рефреш токена и делать на них проверку
+
+        ArgumentCaptor<UsernamePasswordAuthenticationToken> authTokenCaptor =
+                ArgumentCaptor.forClass(UsernamePasswordAuthenticationToken.class);
+        verify(authenticationManager).authenticate(authTokenCaptor.capture());
+
+        UsernamePasswordAuthenticationToken capturedToken = authTokenCaptor.getValue();
+        assertThat(capturedToken.getPrincipal()).isEqualTo("existing@example.com");
+        assertThat(capturedToken.getCredentials()).isEqualTo("CorrectPassword123!");
+
+        verify(userRepository).findByEmailWithAuth("existing@example.com");
+    }
+
+    /**
+     * Test 2: Authentication with a non-existent email should throw a UserNotFoundException
+     * We check the validation of the email's existence before attempting authentication
+     */
+    void authenticate_shouldThrowUserNotFoundException_whenEmailDoesNotExist() {
+        when(userRepository.existsByEmail(invalidEmailRequest.getEmail()))
+                .thenReturn(false);
+
+        assertThatThrownBy(() ->
+                authenticationService.authenticate(invalidEmailRequest)
+        )
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessageContaining("User with email " + invalidEmailRequest.getEmail() + " not found");
+
+        verify(authenticationManager, never()).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        verify(userRepository, never()).findByEmailWithAuth(anyString());
+    }
+
+
+    /**
+     * Test 3: Authentication with existing email, but invalid password
+     * We check the processing of BadCredentialsException and the conversion to InvalidPasswordException
+     */
+    @Test
+    void authenticate_shouldThrowInvalidPasswordException_whenPasswordIsIncorrect() {
+
+        when(userRepository.existsByEmail(invalidPasswordRequest.getEmail()))
+                .thenReturn(true);
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenThrow(new BadCredentialsException("Bad credentials"));
+
+        assertThatThrownBy(() ->
+                authenticationService.authenticate(invalidPasswordRequest)
+        )
+                .isInstanceOf(InvalidPasswordException.class)
+                .hasMessage("Invalid password");
+
+        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+
+        verify(userRepository, never()).findByEmailWithAuth(anyString());
+        verify(jwtService, never()).generateAccessToken(any());
+        verify(refreshTokenService, never()).createRefreshToken(any());
+
     }
 }
 
