@@ -22,9 +22,17 @@ public class DemoController {
     @Operation(
             summary = "ping pong"
     )
-  
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
         return ResponseEntity.ok("pong");
     }
+
+    @Operation(
+            summary = "ping pong with auth"
+    )
+    @GetMapping("/authping")
+    public ResponseEntity<String> authping() {
+        return ResponseEntity.ok("pong");
+    }
+
 }
