@@ -283,6 +283,7 @@ public class AuthenticationServiceTest {
      * Test 2: Authentication with a non-existent email should throw a UserNotFoundException
      * We check the validation of the email's existence before attempting authentication
      */
+    @Test
     void authenticate_shouldThrowUserNotFoundException_whenEmailDoesNotExist() {
         when(userRepository.existsByEmail(invalidEmailRequest.getEmail()))
                 .thenReturn(false);
