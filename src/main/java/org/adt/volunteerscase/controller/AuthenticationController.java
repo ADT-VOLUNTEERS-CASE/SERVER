@@ -57,6 +57,12 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 
+    /**
+     * Registers a new user with coordinator role. Requires admin privileges.
+     * * `@param` request registration request containing user credentials and profile details
+     * `@return` an AuthenticationResponse containing access and refresh tokens
+     */
+
     @Operation(
             summary = "регистрация нового пользователя с ролью координатор",
             description = "Создаёт нового пользователя с ролью координатор и возвращает jwt токены",
@@ -77,6 +83,15 @@ public class AuthenticationController {
     ) {
         return ResponseEntity.ok(authenticationService.registerCoordinator(request));
     }
+
+    @Operation(
+            summary = "регистрация нового пользователя с ролью админ",
+            description = "Создаёт нового пользователя с ролью админ и возвращает jwt токены",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешная регистрация"),
+                    @ApiResponse(responseCode = "400", description = "Невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "Пользователь(с таким email или номером телефона) уже существует", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))}
+    )
     @SecurityRequirement(name = "jwtAuth")
     @PostMapping("/register/admin")
     public ResponseEntity<AuthenticationResponse> registerAdmin(

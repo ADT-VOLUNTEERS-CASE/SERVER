@@ -43,6 +43,9 @@ public class UserDetailsImpl implements UserDetails {
      */
     @Override
     public String getPassword() {
+        if (user == null) {
+            throw new IllegalStateException("User cannot be null in UserDetails");
+        }
         return userAuth.getPasswordHash();
     }
 
@@ -53,6 +56,9 @@ public class UserDetailsImpl implements UserDetails {
      */
     @Override
     public @NonNull String getUsername() {
+        if (user == null) {
+            throw new IllegalStateException("User cannot be null in UserDetails");
+        }
         return user.getEmail();
     }
 
