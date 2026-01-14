@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +57,39 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.register(request));
     }
 
+    @Operation(
+            summary = "регистрация нового пользователя с ролью координатор",
+            description = "Создаёт нового пользователя с ролью координатор и возвращает jwt токены",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешная регистрация"),
+                    @ApiResponse(responseCode = "400", description = "Невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "Пользователь(с таким email или номером телефона) уже существует", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))}
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @PostMapping("/register/coordinator")
+    public ResponseEntity<AuthenticationResponse> registerCoordinator(
+            @Valid
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Данные для регистрации нового пользователя",
+                    required = true
+            )
+            @RequestBody RegisterRequest request
+    ) {
+        return ResponseEntity.ok(authenticationService.registerCoordinator(request));
+    }
+    @SecurityRequirement(name = "jwtAuth")
+    @PostMapping("/register/admin")
+    public ResponseEntity<AuthenticationResponse> registerAdmin(
+            @Valid
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Данные для регистрации нового пользователя",
+                    required = true
+            )
+            @RequestBody RegisterRequest request
+    ) {
+        return ResponseEntity.ok(authenticationService.registerAdmin(request));
+    }
+
     /**
      * Authenticate a user and issue JWT access and refresh tokens.
      *
@@ -87,7 +122,7 @@ public class AuthenticationController {
 
     /**
      * Refreshes JWT authentication tokens.
-     *
+     * <p>
      * Exchanges a valid refresh token for a new access token and refresh token pair.
      *
      * @param request the token refresh payload containing the refresh token
@@ -111,7 +146,7 @@ public class AuthenticationController {
                     description = "Токен обновления пользователя"
             )
             @RequestBody TokenRefreshRequest request
-            ) {
+    ) {
         return ResponseEntity.ok(authenticationService.refreshToken(request));
     }
 }

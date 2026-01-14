@@ -35,7 +35,7 @@ public class AuthenticationService {
 
     /**
      * Register a new user and issue authentication tokens.
-     *
+     * <p>
      * Creates and persists the user and associated authentication record after
      * validating that the provided email and phone number are not already in use,
      * then returns an access token and a refresh token.
@@ -75,6 +75,82 @@ public class AuthenticationService {
                 .build();
     }
 
+    public AuthenticationResponse registerCoordinator(RegisterRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new UserAlreadyExistsException("User with email " + request.getEmail() + " already exists");
+        }
+
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new UserAlreadyExistsException("User with phone number " + request.getPhoneNumber() + " already exists");
+        }
+
+        var userAuth = UserAuthEntity.builder()
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .build();
+
+        var user = UserEntity.builder()
+                .firstname(request.getFirstname())
+                .lastname(request.getLastname())
+                .patronymic(request.getPatronymic())
+                .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
+                .isCoordinator(true)
+                .userAuth(userAuth)
+                .build();
+
+        userAuth.setUser(user);
+        userRepository.save(user);
+
+        var accessToken = jwtService.generateAccessToken(new UserDetailsImpl(user, userAuth));
+
+        var refreshToken = refreshTokenService.createRefreshToken(user).getRefreshToken();
+
+        return AuthenticationResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+
+    }
+
+    public AuthenticationResponse registerAdmin(RegisterRequest request) {
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new UserAlreadyExistsException("User with email " + request.getEmail() + " already exists");
+        }
+
+        if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new UserAlreadyExistsException("User with phone number " + request.getPhoneNumber() + " already exists");
+        }
+
+        var userAuth = UserAuthEntity.builder()
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .build();
+
+        var user = UserEntity.builder()
+                .firstname(request.getFirstname())
+                .lastname(request.getLastname())
+                .patronymic(request.getPatronymic())
+                .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
+                .isAdmin(true)
+                .userAuth(userAuth)
+                .build();
+
+        userAuth.setUser(user);
+        userRepository.save(user);
+
+        var accessToken = jwtService.generateAccessToken(new UserDetailsImpl(user, userAuth));
+
+        var refreshToken = refreshTokenService.createRefreshToken(user).getRefreshToken();
+
+        return AuthenticationResponse.builder()
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
+
+    }
+
     /**
      * Refreshes authentication tokens using an existing refresh token.
      *
@@ -103,7 +179,7 @@ public class AuthenticationService {
      *
      * @param request the authentication request containing the user's email and password
      * @return an AuthenticationResponse containing a freshly generated access token and refresh token
-     * @throws UserNotFoundException if no user exists with the provided email
+     * @throws UserNotFoundException    if no user exists with the provided email
      * @throws InvalidPasswordException if the provided password is incorrect
      */
     public AuthenticationResponse authenticate(AuthenticationRequest request) {

@@ -56,6 +56,14 @@ public class UserEntity{
     @Column(name = "email", unique = true, nullable = false)
     private String email;                                       //email, валидация по RFC 5322
 
+    @Column(name = "is_admin", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private boolean isAdmin = false;
+
+    @Column(name = "is_coordinator", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private boolean isCoordinator = false;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserAuthEntity userAuth;                            //связь один к одному с таблицей user_auth, при удалении записи в users удалиться соответствуйщий user_auth
 

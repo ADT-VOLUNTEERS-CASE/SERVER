@@ -47,6 +47,8 @@ public class SecurityConfig {
                                         "/api/v1/ping"
                                 )
                                 .permitAll()
+                                .requestMatchers("/api/v1/adminping", "/api/v1/auth/register/**").hasAuthority("ROLE_ADMIN")
+                                .requestMatchers("/api/v1/coordinatorping").hasAuthority("ROLE_COORDINATOR")
                                 .anyRequest()
                                 .authenticated()
                 )

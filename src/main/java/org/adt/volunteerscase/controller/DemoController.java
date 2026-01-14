@@ -15,7 +15,7 @@ public class DemoController {
      *
      * @return a ResponseEntity containing the body "pong" and HTTP status 200 (OK)
      */
-  
+
     @Operation(
             summary = "ping pong"
     )
@@ -30,6 +30,24 @@ public class DemoController {
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/authping")
     public ResponseEntity<String> authping() {
+        return ResponseEntity.ok("pong");
+    }
+
+    @Operation(
+            summary = "ping pong only with role admin"
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @GetMapping("/adminping")
+    public ResponseEntity<String> authadminping() {
+        return ResponseEntity.ok("pong");
+    }
+
+    @Operation(
+            summary = "ping pong only with role coordinator"
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @GetMapping("/coordinatorping")
+    public ResponseEntity<String> authcoordinatorping() {
         return ResponseEntity.ok("pong");
     }
 

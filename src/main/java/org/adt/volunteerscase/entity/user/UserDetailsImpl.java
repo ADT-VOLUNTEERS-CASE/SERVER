@@ -4,8 +4,10 @@ import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -16,14 +18,22 @@ public class UserDetailsImpl implements UserDetails {
     private final UserEntity user;
     private final UserAuthEntity userAuth;
 
-    /**
-     * Provides the granted authorities assigned to the user.
-     *
-     * @return an empty collection of granted authorities.
-     */
+
     @Override
     public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        List<GrantedAuthority> authorities = new ArrayList<>();
+
+        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+
+        if (user != null && user.isAdmin()){
+            authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        }
+
+        if (user != null && user.isCoordinator()){
+            authorities.add(new SimpleGrantedAuthority("ROLE_COORDINATOR"));
+        }
+
+        return authorities;
     }
 
     /**
@@ -44,6 +54,42 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public @NonNull String getUsername() {
         return user.getEmail();
+    }
+
+    /**
+     * Checks if the user has admin privileges.
+     *
+     * @return true if the user is an admin
+     */
+    public boolean isAdmin() {
+        return user != null && user.isAdmin();
+    }
+
+    /**
+     * Checks if the user has coordinator privileges.
+     *
+     * @return true if the user is a coordinator
+     */
+    public boolean isCoordinator() {
+        return user != null && user.isCoordinator();
+    }
+
+    /**
+     * Gets the user entity for additional information if needed.
+     *
+     * @return the UserEntity instance
+     */
+    public UserEntity getUser() {
+        return user;
+    }
+
+    /**
+     * Gets the user authentication entity.
+     *
+     * @return the UserAuthEntity instance
+     */
+    public UserAuthEntity getUserAuth() {
+        return userAuth;
     }
 
     /**
