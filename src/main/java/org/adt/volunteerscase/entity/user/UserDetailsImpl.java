@@ -43,7 +43,7 @@ public class UserDetailsImpl implements UserDetails {
      */
     @Override
     public String getPassword() {
-        if (user == null) {
+        if (userAuth == null) {
             throw new IllegalStateException("User cannot be null in UserDetails");
         }
         return userAuth.getPasswordHash();
