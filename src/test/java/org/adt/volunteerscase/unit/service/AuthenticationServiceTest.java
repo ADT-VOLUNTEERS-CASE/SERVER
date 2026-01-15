@@ -229,13 +229,223 @@ public class AuthenticationServiceTest {
         assertThat(savedUser.getPatronymic()).isEqualTo("Иванович");
         assertThat(savedUser.getEmail()).isEqualTo("newuser@example.com");
         assertThat(savedUser.getPhoneNumber()).isEqualTo("+79161234567");
+        assertThat(savedUser.isAdmin()).isFalse();
+        assertThat(savedUser.isCoordinator()).isFalse();
 
         assertThat(savedUser.getUserAuth()).isNotNull();
         assertThat(savedUser.getUserAuth().getPasswordHash()).isEqualTo("encodedPass");
         assertThat(savedUser.getUserAuth().getUser()).isSameAs(savedUser);
     }
 
+//----------------------------------   registerCoordinator method   ----------------------------------
+    /**
+     * Test 1: Successful registration of a new user coordinator
+     * We check that the user is created successfully with unique data
+     */
+    @Test
+    void registerCoordinator_shouldReturnTokens_whenUserIsNew() {
+        when(userRepository.existsByEmail(validRegisterRequest.getEmail()))
+                .thenReturn(false);
 
+        when(userRepository.existsByPhoneNumber(validRegisterRequest.getPhoneNumber()))
+                .thenReturn(false);
+
+        when(passwordEncoder.encode(validRegisterRequest.getPassword()))
+                .thenReturn("encodedPassword123");
+
+        when(jwtService.generateAccessToken(any(UserDetailsImpl.class)))
+                .thenReturn("jwtAccessToken");
+
+        when(refreshTokenService.createRefreshToken(any(UserEntity.class)))
+                .thenReturn(new RefreshTokenEntity());
+
+        AuthenticationResponse response = authenticationService.registerCoordinator(validRegisterRequest);
+
+        assertThat(response.getAccessToken()).isEqualTo("jwtAccessToken");
+        //assertThat(response.getRefreshToken()).isNotNull(); // TODO: реализовать
+
+        verify(userRepository).save(any(UserEntity.class));
+
+        verify(passwordEncoder).encode("Password123!");
+    }
+
+    /**
+     * Test 2: Registering coordinator with an existing email should throw an exception
+     * We check the email uniqueness validation
+     */
+    @Test
+    void registerCoordinator_shouldThrowException_whenEmailAlreadyExists() {
+
+        when(userRepository.existsByEmail(existingEmailRequest.getEmail()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authenticationService.registerCoordinator(existingEmailRequest)
+        )
+                .isInstanceOf(UserAlreadyExistsException.class)
+                .hasMessageContaining("User with email " + existingEmailRequest.getEmail() + " already exists");
+
+        verify(userRepository, never()).save(any(UserEntity.class));
+    }
+
+    /**
+     * Test 3: Registering coordinator with an existing phone should throw an exception
+     * We check the validation of the uniqueness of the phone
+     */
+    @Test
+    void registerCoordinator_shouldThrowException_whenPhoneNumberAlreadyExists() {
+        when(userRepository.existsByEmail(existingPhoneRequest.getEmail()))
+                .thenReturn(false);
+
+        when(userRepository.existsByPhoneNumber(existingPhoneRequest.getPhoneNumber()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authenticationService.registerCoordinator(existingPhoneRequest)
+        )
+                .isInstanceOf(UserAlreadyExistsException.class)
+                .hasMessageContaining("User with phone number " + existingPhoneRequest.getPhoneNumber() + " already exists");
+
+        verify(userRepository, never()).save(any(UserEntity.class));
+    }
+
+    /**
+     * Test 4: Creating a user with the correct data(isCoordinator = true)
+     * We check that the UserEntity is created with the correct fields
+     */
+    @Test
+    void registerCoordinator_shouldCreateUserWithCorrectData() {
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userRepository.existsByPhoneNumber(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPass");
+        when(jwtService.generateAccessToken(any())).thenReturn("token");
+        when(refreshTokenService.createRefreshToken(any())).thenReturn(new RefreshTokenEntity());
+
+        ArgumentCaptor<UserEntity> userCaptor = ArgumentCaptor.forClass(UserEntity.class);
+
+        authenticationService.registerCoordinator(validRegisterRequest);
+
+        verify(userRepository).save(userCaptor.capture());
+        UserEntity savedUser = userCaptor.getValue();
+
+        assertThat(savedUser.getFirstname()).isEqualTo("Иван");
+        assertThat(savedUser.getLastname()).isEqualTo("Иванов");
+        assertThat(savedUser.getPatronymic()).isEqualTo("Иванович");
+        assertThat(savedUser.getEmail()).isEqualTo("newuser@example.com");
+        assertThat(savedUser.getPhoneNumber()).isEqualTo("+79161234567");
+        assertThat(savedUser.isCoordinator()).isTrue();
+        assertThat(savedUser.isAdmin()).isFalse();
+
+        assertThat(savedUser.getUserAuth()).isNotNull();
+        assertThat(savedUser.getUserAuth().getPasswordHash()).isEqualTo("encodedPass");
+        assertThat(savedUser.getUserAuth().getUser()).isSameAs(savedUser);
+    }
+//----------------------------------   registerAdmin method   ----------------------------------
+
+    /**
+     * Test 1: Successful registration of a new admin user
+     * We check that the user is created successfully with unique data
+     */
+    @Test
+    void registerAdmin_shouldReturnTokens_whenUserIsNew() {
+        when(userRepository.existsByEmail(validRegisterRequest.getEmail()))
+                .thenReturn(false);
+
+        when(userRepository.existsByPhoneNumber(validRegisterRequest.getPhoneNumber()))
+                .thenReturn(false);
+
+        when(passwordEncoder.encode(validRegisterRequest.getPassword()))
+                .thenReturn("encodedPassword123");
+
+        when(jwtService.generateAccessToken(any(UserDetailsImpl.class)))
+                .thenReturn("jwtAccessToken");
+
+        when(refreshTokenService.createRefreshToken(any(UserEntity.class)))
+                .thenReturn(new RefreshTokenEntity());
+
+        AuthenticationResponse response = authenticationService.registerAdmin(validRegisterRequest);
+
+        assertThat(response.getAccessToken()).isEqualTo("jwtAccessToken");
+        //assertThat(response.getRefreshToken()).isNotNull(); // TODO: реализовать
+
+        verify(userRepository).save(any(UserEntity.class));
+
+        verify(passwordEncoder).encode("Password123!");
+    }
+
+    /**
+     * Test 2: Registering admin with an existing email should throw an exception
+     * We check the email uniqueness validation
+     */
+    @Test
+    void registerAdmin_shouldThrowException_whenEmailAlreadyExists() {
+
+        when(userRepository.existsByEmail(existingEmailRequest.getEmail()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authenticationService.registerAdmin(existingEmailRequest)
+        )
+                .isInstanceOf(UserAlreadyExistsException.class)
+                .hasMessageContaining("User with email " + existingEmailRequest.getEmail() + " already exists");
+
+        verify(userRepository, never()).save(any(UserEntity.class));
+    }
+
+    /**
+     * Test 3: Registering admin with an existing phone should throw an exception
+     * We check the validation of the uniqueness of the phone
+     */
+    @Test
+    void registerAdmin_shouldThrowException_whenPhoneNumberAlreadyExists() {
+        when(userRepository.existsByEmail(existingPhoneRequest.getEmail()))
+                .thenReturn(false);
+
+        when(userRepository.existsByPhoneNumber(existingPhoneRequest.getPhoneNumber()))
+                .thenReturn(true);
+
+        assertThatThrownBy(() ->
+                authenticationService.registerAdmin(existingPhoneRequest)
+        )
+                .isInstanceOf(UserAlreadyExistsException.class)
+                .hasMessageContaining("User with phone number " + existingPhoneRequest.getPhoneNumber() + " already exists");
+
+        verify(userRepository, never()).save(any(UserEntity.class));
+    }
+
+    /**
+     * Test 4: Creating a user with the correct data(isAdmin = true)
+     * We check that the UserEntity is created with the correct fields
+     */
+    @Test
+    void registerAdmin_shouldCreateUserWithCorrectData() {
+
+        when(userRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userRepository.existsByPhoneNumber(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPass");
+        when(jwtService.generateAccessToken(any())).thenReturn("token");
+        when(refreshTokenService.createRefreshToken(any())).thenReturn(new RefreshTokenEntity());
+
+        ArgumentCaptor<UserEntity> userCaptor = ArgumentCaptor.forClass(UserEntity.class);
+
+        authenticationService.registerAdmin(validRegisterRequest);
+
+        verify(userRepository).save(userCaptor.capture());
+        UserEntity savedUser = userCaptor.getValue();
+
+        assertThat(savedUser.getFirstname()).isEqualTo("Иван");
+        assertThat(savedUser.getLastname()).isEqualTo("Иванов");
+        assertThat(savedUser.getPatronymic()).isEqualTo("Иванович");
+        assertThat(savedUser.getEmail()).isEqualTo("newuser@example.com");
+        assertThat(savedUser.getPhoneNumber()).isEqualTo("+79161234567");
+        assertThat(savedUser.isAdmin()).isTrue();
+        assertThat(savedUser.isCoordinator()).isFalse();
+
+        assertThat(savedUser.getUserAuth()).isNotNull();
+        assertThat(savedUser.getUserAuth().getPasswordHash()).isEqualTo("encodedPass");
+        assertThat(savedUser.getUserAuth().getUser()).isSameAs(savedUser);
+    }
 //----------------------------------   authenticate method   ----------------------------------
 
 
@@ -326,4 +536,3 @@ public class AuthenticationServiceTest {
 
     }
 }
-
