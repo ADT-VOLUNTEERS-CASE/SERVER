@@ -59,8 +59,8 @@ public class AuthenticationController {
 
     /**
      * Registers a new user with coordinator role. Requires admin privileges.
-     * * `@param` request registration request containing user credentials and profile details
-     * `@return` an AuthenticationResponse containing access and refresh tokens
+     * @param request registration request containing user credentials and profile details
+     * @return an AuthenticationResponse containing access and refresh tokens
      */
 
     @Operation(
@@ -84,6 +84,11 @@ public class AuthenticationController {
         return ResponseEntity.ok(authenticationService.registerCoordinator(request));
     }
 
+    /**
+     * Registers a new user with admin role. Requires admin privileges.
+     * @param request registration request containing user credentials and profile details
+     * @return an AuthenticationResponse containing access and refresh tokens
+     */
     @Operation(
             summary = "регистрация нового пользователя с ролью админ",
             description = "Создаёт нового пользователя с ролью админ и возвращает jwt токены",
