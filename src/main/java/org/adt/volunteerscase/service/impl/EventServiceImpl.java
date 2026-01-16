@@ -35,16 +35,24 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public void createEvent(EventCreateRequest request) {
-        LocationEntity locationEntity = locationRepository.findByLocationId(request.getLocationId())
-                .orElseThrow(() -> new LocationNotFoundException("location with id - " + request.getLocationId() + " not found"));
 
-        if (eventRepository.existsByLocation(locationEntity)) {
-            throw new LocationAlreadyExistsException("location with id - " + request.getLocationId() + " already exists");
+        LocationEntity locationEntity = null;
+        if (request.getCoverId() != null) {
+            locationEntity = locationRepository.findByLocationId(request.getLocationId())
+                    .orElseThrow(() -> new LocationNotFoundException("location with id - " + request.getLocationId() + " not found"));
+
+            if (eventRepository.existsByLocation(locationEntity)) {
+                throw new LocationAlreadyExistsException("location with id - " + request.getLocationId() + " already exists");
+            }
         }
-        CoverEntity coverEntity = coverRepository.findByCoverId(request.getCoverId())
-                .orElseThrow(() -> new CoverNotFoundException("cover with id - " + request.getCoverId() + " not found"));
-        if (eventRepository.existsByCover(coverEntity)) {
-            throw new CoverAlreadyExistsException("cover with id - " + request.getCoverId() + " already exists");
+
+        CoverEntity coverEntity = null;
+        if (request.getCoverId() != null) {
+            coverEntity = coverRepository.findByCoverId(request.getCoverId())
+                    .orElseThrow(() -> new CoverNotFoundException("cover with id - " + request.getCoverId() + " not found"));
+            if (eventRepository.existsByCover(coverEntity)) {
+                throw new CoverAlreadyExistsException("cover with id - " + request.getCoverId() + " already exists");
+            }
         }
         EventEntity eventEntity = EventEntity.builder()
                 .name(request.getName())
@@ -131,7 +139,8 @@ public class EventServiceImpl implements EventService {
                 .coordinatorContact(updateEvent.getCoordinatorContact())
                 .maxCapacity(updateEvent.getMaxCapacity())
                 .dateTimestamp(updateEvent.getDateTimestamp())
-                .locationId(updateEvent.getLocation() != null ? updateEvent.getLocation().getLocationId() : null)                .locationAddress(updateEvent.getLocation().getAddress())
+                .locationId(updateEvent.getLocation() != null ? updateEvent.getLocation().getLocationId() : null)
+                .locationAddress(updateEvent.getLocation() != null ? updateEvent.getLocation().getAddress() : null)
                 .tagIds(updateEvent.getTags() != null ?
                         updateEvent.getTags().stream()
                                 .map(TagEntity::getTagId)

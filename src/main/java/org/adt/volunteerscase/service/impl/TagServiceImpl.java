@@ -7,6 +7,7 @@ import org.adt.volunteerscase.exception.TagAlreadyExistsException;
 import org.adt.volunteerscase.exception.TagNotFoundException;
 import org.adt.volunteerscase.repository.TagRepository;
 import org.adt.volunteerscase.service.TagService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,12 +59,16 @@ public class TagServiceImpl implements TagService {
     @Transactional
     public void createTag(TagCreateRequest request) {
         String tagName = request.getTagName();
-        if (tagRepository.existsByTagName(tagName)){
+        if (tagRepository.existsByTagName(tagName)) {
             throw new TagAlreadyExistsException("tag with name - " + tagName + " already exists");
         }
         TagEntity tagEntity = TagEntity.builder()
                 .tagName(request.getTagName())
                 .build();
-        tagRepository.save(tagEntity);
+        try {
+            tagRepository.save(tagEntity);
+        } catch (DataIntegrityViolationException ex) {
+            throw new TagAlreadyExistsException("tag with name - " + tagName + " already exists");
+        }
     }
 }
