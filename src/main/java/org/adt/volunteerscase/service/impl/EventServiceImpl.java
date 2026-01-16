@@ -91,7 +91,7 @@ public class EventServiceImpl implements EventService {
         if (request.getLocationId() != null) {
             LocationEntity locationEntity = locationRepository.findByLocationId(request.getLocationId())
                     .orElseThrow(() -> new LocationNotFoundException("Location with id - " + request.getLocationId() + " not found"));
-            if (eventRepository.existsByLocation(locationEntity)) {
+            if (eventRepository.existsByLocationAndEventIdNot(locationEntity, eventId)) {
                 throw new LocationAlreadyExistsException("location with id - " + request.getLocationId() + " already exists");
             }
             event.setLocation(locationEntity);
@@ -100,7 +100,7 @@ public class EventServiceImpl implements EventService {
         if (request.getCoverId() != null) {
             CoverEntity coverEntity = coverRepository.findByCoverId(request.getCoverId())
                     .orElseThrow(() -> new CoverNotFoundException("cover with id - " + request.getCoverId() + " not found"));
-            if (eventRepository.existsByCover(coverEntity)) {
+            if (eventRepository.existsByCoverAndEventIdNot(coverEntity, eventId)) {
                 throw new CoverAlreadyExistsException("cover with id - " + request.getCoverId() + " already exists");
             }
             event.setCover(coverEntity);
@@ -131,8 +131,7 @@ public class EventServiceImpl implements EventService {
                 .coordinatorContact(updateEvent.getCoordinatorContact())
                 .maxCapacity(updateEvent.getMaxCapacity())
                 .dateTimestamp(updateEvent.getDateTimestamp())
-                .locationId(request.getLocationId())
-                .locationAddress(updateEvent.getLocation().getAddress())
+                .locationId(updateEvent.getLocation() != null ? updateEvent.getLocation().getLocationId() : null)                .locationAddress(updateEvent.getLocation().getAddress())
                 .tagIds(updateEvent.getTags() != null ?
                         updateEvent.getTags().stream()
                                 .map(TagEntity::getTagId)
@@ -153,6 +152,9 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public void deleteEvent(Integer eventId) {
+        if (!eventRepository.existsById(eventId)) {
+            throw new EventNotFoundException("event with id - " + eventId + " not found");
+        }
         eventRepository.deleteById(eventId);
     }
 }

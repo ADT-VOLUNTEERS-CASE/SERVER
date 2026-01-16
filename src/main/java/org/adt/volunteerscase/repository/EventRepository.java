@@ -15,4 +15,7 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
 
     boolean existsByLocation(LocationEntity locationEntity);
     boolean existsByCover(CoverEntity coverEntity);
+
+    boolean existsByLocationAndEventIdNot(LocationEntity location, Integer eventId);
+    boolean existsByCoverAndEventIdNot(CoverEntity cover, Integer eventId);
 }

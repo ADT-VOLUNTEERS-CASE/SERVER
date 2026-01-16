@@ -17,7 +17,7 @@ public class LocationServiceImpl implements LocationService {
     @Override
     public void createLocation(LocationCreateRequest request) {
         if (locationRepository.existsByAddress(request.getAddress())){
-            throw new LocationAlreadyExistsException("location with address" + request.getAddress() + " already exists");
+            throw new LocationAlreadyExistsException("location with address " + request.getAddress() + " already exists");
         }
         LocationEntity locationEntity = LocationEntity.builder()
                 .address(request.getAddress())

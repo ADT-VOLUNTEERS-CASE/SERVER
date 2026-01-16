@@ -59,7 +59,7 @@ public class TagServiceImpl implements TagService {
     public void createTag(TagCreateRequest request) {
         String tagName = request.getTagName();
         if (tagRepository.existsByTagName(tagName)){
-            throw new TagAlreadyExistsException("tag with name + " + tagName + " already exists");
+            throw new TagAlreadyExistsException("tag with name - " + tagName + " already exists");
         }
         TagEntity tagEntity = TagEntity.builder()
                 .tagName(request.getTagName())

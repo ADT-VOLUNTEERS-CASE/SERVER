@@ -1,9 +1,6 @@
 package org.adt.volunteerscase.dto.event.request;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +35,7 @@ public class EventCreateRequest {
             message = "Coordinator contact must be valid email or E.164 phone")
     private String coordinatorContact;
 
+    @Min(value = 1, message = "Max capacity must be greater than 0")
     @NotNull(message = "maxCapacity is blank")
     private Integer maxCapacity;
 

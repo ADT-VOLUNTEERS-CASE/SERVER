@@ -78,7 +78,7 @@ public class EventController {
             }
     )
     @SecurityRequirement(name = "jwtAuth")
-    @PatchMapping("update/status/{eventId}")
+    @PatchMapping("/update/status/{eventId}")
     public ResponseEntity<?> updateEventStatus(
             @PathVariable Integer eventId,
             @Valid
