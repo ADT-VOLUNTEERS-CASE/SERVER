@@ -13,7 +13,7 @@ services:
     networks:
       - volunteers_network_dev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USRNAME:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
