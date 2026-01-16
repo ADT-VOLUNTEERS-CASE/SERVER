@@ -1,6 +1,7 @@
 package org.adt.volunteerscase.exception;
 
 import org.adt.volunteerscase.dto.ErrorResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -68,5 +69,41 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleRefreshTokenExpired(RefreshTokenException ex) {
         ErrorResponse error = new ErrorResponse("REFRESH_TOKEN_EXPIRED", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(EventNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleEventNotFoundException(EventNotFoundException ex){
+        ErrorResponse errorResponse = new ErrorResponse("EVENT_NOT_FOUND", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(CoverNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCoverNotFoundException(CoverNotFoundException ex){
+        ErrorResponse errorResponse = new ErrorResponse("COVER_NOT_FOUND", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(TagNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTagNotFoundException(TagNotFoundException ex){
+        ErrorResponse errorResponse = new ErrorResponse("TAG_NOT_FOUND", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(TagAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleTagAlreadyExistsException(TagAlreadyExistsException ex){
+        ErrorResponse errorResponse = new ErrorResponse("TAG_NAME_ALREADY_EXSISTS", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(LocationAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleLocationAlreadyExistsException(LocationAlreadyExistsException ex){
+        ErrorResponse errorResponse = new ErrorResponse("LOCATION_ALREADY_EXISTS", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(CoverAlreadyExistsException.class)
+    public ResponseEntity<?> handleCoverAlreadyExistsException(CoverAlreadyExistsException ex){
+        ErrorResponse errorResponse = new ErrorResponse("COVER_ALREADY_EXISTS", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 }
