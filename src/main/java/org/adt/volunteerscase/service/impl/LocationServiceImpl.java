@@ -64,8 +64,9 @@ public class LocationServiceImpl implements LocationService {
         LocationEntity locationEntity = locationRepository.findByLocationId(locationId)
                 .orElseThrow(() -> new LocationNotFoundException("location with id - " + locationId + " not found"));
 
-        if (!request.getAddress().equals(locationEntity.getAddress()) && locationRepository.existsByAddress(request.getAddress())) {
-            if (locationRepository.existsByAddress(request.getAddress())) {
+        if (request.getAddress() != null) {
+            if (!request.getAddress().equals(locationEntity.getAddress())
+                    && locationRepository.existsByAddress(request.getAddress())) {
                 throw new LocationAlreadyExistsException("location with address " + request.getAddress() + " already exists");
             }
             locationEntity.setAddress(request.getAddress());
