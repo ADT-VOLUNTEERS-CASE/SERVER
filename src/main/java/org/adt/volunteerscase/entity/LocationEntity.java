@@ -22,7 +22,7 @@ public class LocationEntity {
     private Integer locationId;
 
     @NotBlank(message = "address is blank")
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String address;                                          //адрес, не пустой
 
     @Column(name = "additional_notes", length = 5000)

@@ -9,6 +9,7 @@ import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.exception.LocationAlreadyExistsException;
 import org.adt.volunteerscase.repository.LocationRepository;
 import org.adt.volunteerscase.service.LocationService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -26,7 +27,7 @@ public class LocationServiceImpl implements LocationService {
 
     @Override
     public void createLocation(LocationCreateRequest request) {
-        if (locationRepository.existsByAddress(request.getAddress())){
+        if (locationRepository.existsByAddress(request.getAddress())) {
             throw new LocationAlreadyExistsException("location with address " + request.getAddress() + " already exists");
         }
         LocationEntity locationEntity = LocationEntity.builder()
@@ -35,7 +36,11 @@ public class LocationServiceImpl implements LocationService {
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude()).build();
 
-        locationRepository.save(locationEntity);
+        try {
+            locationRepository.save(locationEntity);
+        } catch (DataIntegrityViolationException ex) {
+            throw new LocationAlreadyExistsException("location with address " + request.getAddress() + " already exists");
+        }
     }
 
     @Override
@@ -52,7 +57,7 @@ public class LocationServiceImpl implements LocationService {
 
 
     @Transactional(readOnly = true)
-    public LocationResponse convertToResponse(LocationEntity location){
+    public LocationResponse convertToResponse(LocationEntity location) {
         if (location == null) {
             return null;
         }
