@@ -2,11 +2,21 @@ package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.location.request.LocationCreateRequest;
+import org.adt.volunteerscase.dto.location.request.LocationSearchRequest;
+import org.adt.volunteerscase.dto.location.response.LocationResponse;
+import org.adt.volunteerscase.dto.page.response.PageResponse;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.exception.LocationAlreadyExistsException;
 import org.adt.volunteerscase.repository.LocationRepository;
 import org.adt.volunteerscase.service.LocationService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,5 +36,32 @@ public class LocationServiceImpl implements LocationService {
                 .longitude(request.getLongitude()).build();
 
         locationRepository.save(locationEntity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<LocationResponse> searchLocations(LocationSearchRequest request, Pageable pageable) {
+        Page<LocationEntity> locationPage = locationRepository.searchByAddress(request.getAddress(), pageable);
+
+        List<LocationResponse> content = locationPage.getContent().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return PageResponse.of(new PageImpl<>(content, pageable, locationPage.getTotalElements()));
+    }
+
+
+    @Transactional(readOnly = true)
+    public LocationResponse convertToResponse(LocationEntity location){
+        if (location == null) {
+            return null;
+        }
+        return LocationResponse.builder()
+                .locationId(location.getLocationId())
+                .address(location.getAddress())
+                .additionalNotes(location.getAdditionalNotes())
+                .longitude(location.getLongitude())
+                .latitude(location.getLatitude())
+                .build();
     }
 }

@@ -18,5 +18,6 @@ public interface EventService {
     void deleteEvent(Integer eventId);
     PageResponse<GetAllResponse> getAllEvents(Pageable pageable);
 
+
 }
 
