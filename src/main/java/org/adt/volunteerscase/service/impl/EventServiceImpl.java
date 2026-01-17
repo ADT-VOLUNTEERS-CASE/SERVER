@@ -1,12 +1,15 @@
 package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
 import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
 import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
+import org.adt.volunteerscase.dto.location.LocationEntityDTO;
 import org.adt.volunteerscase.dto.page.response.PageResponse;
+import org.adt.volunteerscase.dto.tag.TagEntityDTO;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
@@ -24,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,7 +47,7 @@ public class EventServiceImpl implements EventService {
     public void createEvent(EventCreateRequest request) {
 
         LocationEntity locationEntity = null;
-        if (request.getCoverId() != null) {
+        if (request.getLocationId() != null) {
             locationEntity = locationRepository.findByLocationId(request.getLocationId())
                     .orElseThrow(() -> new LocationNotFoundException("location with id - " + request.getLocationId() + " not found"));
 
@@ -191,12 +195,47 @@ public class EventServiceImpl implements EventService {
                 .status(event.getStatus())
                 .name(event.getName())
                 .description(event.getDescription())
-                .cover(event.getCover())
+                .cover(convertCoverToDTO(event.getCover()))
                 .coordinatorContact(event.getCoordinatorContact())
                 .maxCapacity(event.getMaxCapacity())
                 .dateTimestamp(event.getDateTimestamp())
-                .location(event.getLocation())
-                .tags(event.getTags())
+                .location(convertLocationToLocationDTO(event.getLocation()))
+                .tags(convertTagsToTagsDTO(event.getTags()))
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    private Set<TagEntityDTO> convertTagsToTagsDTO(Set<TagEntity> tagEntities){
+        if (tagEntities == null || tagEntities.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return tagEntities.stream()
+                .map(this::convertTagToDTO)
+                .collect(Collectors.toSet());
+    }
+    @Transactional(readOnly = true)
+    private TagEntityDTO convertTagToDTO(TagEntity tag){
+        return TagEntityDTO.builder()
+                .tagId(tag.getTagId())
+                .tagName(tag.getTagName()).build();
+    }
+
+    @Transactional(readOnly = true)
+    private LocationEntityDTO convertLocationToLocationDTO(LocationEntity location){
+        return LocationEntityDTO.builder()
+                .locationId(location.getLocationId())
+                .address(location.getAddress())
+                .latitude(location.getLatitude())
+                .longitude(location.getLongitude()).build();
+    }
+    @Transactional(readOnly = true)
+    private CoverEntityDTO convertCoverToDTO(CoverEntity cover){
+        return CoverEntityDTO.builder()
+                .link(cover.getLink())
+                .coverId(cover.getCoverId())
+                .width(cover.getWidth())
+                .height(cover.getHeight())
                 .build();
     }
 
