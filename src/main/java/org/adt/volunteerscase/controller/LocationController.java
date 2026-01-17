@@ -45,6 +45,15 @@ public class LocationController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "поиск локаций",
+            description = "поиск локаций по адресу с пагинацией",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "успешно"),
+                    @ApiResponse(responseCode = "400", description = "невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
+
     @SecurityRequirement(name = "jwtAuth")
     @PostMapping("/all")
     public ResponseEntity<PageResponse<LocationResponse>> searchLocations(
@@ -89,7 +98,7 @@ public class LocationController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "данные для обновления полей локации, если какое-то поле пустое, оно не будет изменено"
             )
-            LocationPatchRequest request){
+            LocationPatchRequest request) {
         return ResponseEntity.ok().body(locationService.updateLocation(request, locationId));
     }
 

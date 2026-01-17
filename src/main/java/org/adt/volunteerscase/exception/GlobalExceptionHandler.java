@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(LocationNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleLocationNotFoundException(LocationNotFoundException ex){
-        ErrorResponse errorResponse = new ErrorResponse("LOCATION_ALREADY_EXISTS", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("LOCATION_NOT_FOUND", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 }

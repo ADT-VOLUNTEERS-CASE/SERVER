@@ -59,33 +59,34 @@ public class LocationServiceImpl implements LocationService {
     }
 
     @Override
+    @Transactional
     public LocationPatchResponse updateLocation(LocationPatchRequest request, Integer locationId) {
         LocationEntity locationEntity = locationRepository.findByLocationId(locationId)
                 .orElseThrow(() -> new LocationNotFoundException("location with id - " + locationId + " not found"));
 
-        if (request.getAddress() != null){
-            if (locationRepository.existsByAddress(request.getAddress())){
+        if (!request.getAddress().equals(locationEntity.getAddress()) && locationRepository.existsByAddress(request.getAddress())) {
+            if (locationRepository.existsByAddress(request.getAddress())) {
                 throw new LocationAlreadyExistsException("location with address " + request.getAddress() + " already exists");
             }
             locationEntity.setAddress(request.getAddress());
         }
 
-        if (request.getAdditionalNotes() != null){
+        if (request.getAdditionalNotes() != null) {
             locationEntity.setAdditionalNotes(request.getAdditionalNotes());
         }
 
-        if (request.getLatitude() != null){
+        if (request.getLatitude() != null) {
             locationEntity.setLatitude(request.getLatitude());
         }
 
-        if (request.getLongitude() != null){
+        if (request.getLongitude() != null) {
             locationEntity.setLongitude(request.getLongitude());
         }
 
         try {
             locationRepository.save(locationEntity);
         } catch (DataIntegrityViolationException ex) {
-            throw new LocationAlreadyExistsException("location with address " + request.getAddress() + " already exists");
+            throw new LocationAlreadyExistsException("location with address " + locationEntity.getAddress() + " already exists");
         }
         return LocationPatchResponse.builder()
                 .locationId(locationEntity.getLocationId())

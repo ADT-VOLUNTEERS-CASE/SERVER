@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class LocationPatchRequest {
 
-    @Size(max = 255, message = "Name max length is 255")
+    @Size(max = 255, message = "Address max length is 255")
     private String address;
 
     @Size(max = 5000, message = "Additional Notes max length is 5000")
