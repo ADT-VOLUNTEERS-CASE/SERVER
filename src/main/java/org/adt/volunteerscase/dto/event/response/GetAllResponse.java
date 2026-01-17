@@ -7,9 +7,6 @@ import lombok.NoArgsConstructor;
 import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
 import org.adt.volunteerscase.dto.location.LocationEntityDTO;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
-import org.adt.volunteerscase.entity.CoverEntity;
-import org.adt.volunteerscase.entity.LocationEntity;
-import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.event.EventStatus;
 
 import java.time.LocalDateTime;

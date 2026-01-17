@@ -223,6 +223,9 @@ public class EventServiceImpl implements EventService {
 
     @Transactional(readOnly = true)
     private LocationEntityDTO convertLocationToLocationDTO(LocationEntity location){
+        if (location == null) {
+            return null;
+        }
         return LocationEntityDTO.builder()
                 .locationId(location.getLocationId())
                 .address(location.getAddress())
@@ -231,6 +234,9 @@ public class EventServiceImpl implements EventService {
     }
     @Transactional(readOnly = true)
     private CoverEntityDTO convertCoverToDTO(CoverEntity cover){
+        if (cover == null) {
+            return null;
+        }
         return CoverEntityDTO.builder()
                 .link(cover.getLink())
                 .coverId(cover.getCoverId())
