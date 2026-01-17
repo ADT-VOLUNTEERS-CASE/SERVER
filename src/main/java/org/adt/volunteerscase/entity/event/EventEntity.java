@@ -31,8 +31,8 @@ public class EventEntity {
     @Column(nullable = false)
     private String name;
 
-    @Lob // Для длинного текста в БД
-    @Column(columnDefinition = "TEXT")
+
+    @Column(length = 5000)
     private String description;
 
     @OneToOne(fetch = FetchType.LAZY)

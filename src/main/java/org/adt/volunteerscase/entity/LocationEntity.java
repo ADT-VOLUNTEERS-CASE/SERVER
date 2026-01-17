@@ -25,8 +25,7 @@ public class LocationEntity {
     @Column(nullable = false)
     private String address;                                          //адрес, не пустой
 
-    @Lob
-    @Column(name = "additional_notes", columnDefinition = "TEXT")
+    @Column(name = "additional_notes", length = 5000)
     private String additionalNotes;                                  //доп заметки, большое поле
 
     @DecimalMin(value = "-90.0", message = "Latitude must be >= -90")

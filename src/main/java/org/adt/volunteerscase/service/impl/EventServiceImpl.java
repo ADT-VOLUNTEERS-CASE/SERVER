@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
 import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
+import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
+import org.adt.volunteerscase.dto.page.response.PageResponse;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
@@ -16,9 +18,13 @@ import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.LocationRepository;
 import org.adt.volunteerscase.service.EventService;
 import org.adt.volunteerscase.service.TagService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -166,4 +172,32 @@ public class EventServiceImpl implements EventService {
         }
         eventRepository.deleteById(eventId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<GetAllResponse> getAllEvents(Pageable pageable) {
+        Page<EventEntity> eventPage = eventRepository.findAllByOrderByDateTimestampDesc(pageable);
+
+        List<GetAllResponse> content = eventPage.getContent().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return PageResponse.of(new PageImpl<>(content, pageable, eventPage.getTotalElements()));
+    }
+
+    @Transactional(readOnly = true)
+    private GetAllResponse convertToResponse(EventEntity event) {
+        return GetAllResponse.builder()
+                .eventId(event.getEventId())
+                .status(event.getStatus())
+                .name(event.getName())
+                .description(event.getDescription())
+                .cover(event.getCover())
+                .coordinatorContact(event.getCoordinatorContact())
+                .maxCapacity(event.getMaxCapacity())
+                .dateTimestamp(event.getDateTimestamp())
+                .location(event.getLocation())
+                .tags(event.getTags())
+                .build();
+    }
+
 }
