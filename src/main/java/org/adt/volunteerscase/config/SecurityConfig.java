@@ -51,7 +51,7 @@ public class SecurityConfig {
                                 .permitAll()
                                 .requestMatchers("/api/v1/adminping", "/api/v1/auth/register/**").hasAuthority("ROLE_ADMIN")
                                 .requestMatchers("/api/v1/coordinatorping", "/api/v1/cover/create", "/api/v1/tag/create", "/api/v1/event/update/**", "/api/v1/event/create", "/api/v1/event/delete/**").hasAuthority("ROLE_COORDINATOR")
-                                .requestMatchers("/api/v1/location/create").hasAnyAuthority("ROLE_ADMIN", "ROLE_COORDINATOR")
+                                .requestMatchers("/api/v1/location/create", "/api/v1/location/update/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_COORDINATOR")
                                 .anyRequest()
                                 .authenticated()
                 )

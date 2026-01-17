@@ -12,7 +12,9 @@ import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.ErrorResponse;
 import org.adt.volunteerscase.dto.location.request.LocationCreateRequest;
+import org.adt.volunteerscase.dto.location.request.LocationPatchRequest;
 import org.adt.volunteerscase.dto.location.request.LocationSearchRequest;
+import org.adt.volunteerscase.dto.location.response.LocationPatchResponse;
 import org.adt.volunteerscase.dto.location.response.LocationResponse;
 import org.adt.volunteerscase.dto.page.response.PageResponse;
 import org.adt.volunteerscase.service.LocationService;
@@ -63,9 +65,32 @@ public class LocationController {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(Sort.Direction.ASC,"address")
+                Sort.by(Sort.Direction.ASC, "address")
         );
 
-        return ResponseEntity.ok().body(locationService.searchLocations(request, pageable));    }
+        return ResponseEntity.ok().body(locationService.searchLocations(request, pageable));
+    }
+
+    @Operation(
+            summary = "обновление данных для локации",
+            description = "обновить только поля, которым были переданы данные",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "успешно обновленно", content = @Content(schema = @Schema(implementation = LocationPatchResponse.class))),
+                    @ApiResponse(responseCode = "400", description = "невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "по данному айди не найдена локация", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+
+            }
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @PatchMapping("/update/{locationId}")
+    public ResponseEntity<?> updateLocation(
+            @PathVariable Integer locationId,
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "данные для обновления полей локации, если какое-то поле пустое, оно не будет изменено"
+            )
+            LocationPatchRequest request){
+        return ResponseEntity.ok().body(locationService.updateLocation(request, locationId));
+    }
 
 }

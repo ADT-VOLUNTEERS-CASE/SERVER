@@ -102,8 +102,14 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(CoverAlreadyExistsException.class)
-    public ResponseEntity<?> handleCoverAlreadyExistsException(CoverAlreadyExistsException ex){
+    public ResponseEntity<ErrorResponse> handleCoverAlreadyExistsException(CoverAlreadyExistsException ex){
         ErrorResponse errorResponse = new ErrorResponse("COVER_ALREADY_EXISTS", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(LocationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleLocationNotFoundException(LocationNotFoundException ex){
+        ErrorResponse errorResponse = new ErrorResponse("LOCATION_ALREADY_EXISTS", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 }
