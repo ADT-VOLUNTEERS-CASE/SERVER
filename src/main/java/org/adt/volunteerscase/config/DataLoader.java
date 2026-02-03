@@ -32,7 +32,7 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void createAdmin(String firstname, String lastname, String patronymic, String email, String phoneNumber, boolean isCoordinator) {
-        if (!userRepository.existsByEmail(email) || !userRepository.existsByPhoneNumber(phoneNumber)) {
+        if (!userRepository.existsByEmail(email) && !userRepository.existsByPhoneNumber(phoneNumber)) {
 
             UserAuthEntity userAuth = UserAuthEntity.builder()
                     .passwordHash(passwordEncoder.encode(adminpassword))
