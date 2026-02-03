@@ -28,6 +28,7 @@ services:
       DB_USRNAME: ${DB_USRNAME:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       SECRET_KEY: ${SECRET_KEY}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       SPRING_PROFILES_ACTIVE: dev
     ports:
       - "8080:8080"
