@@ -1,8 +1,11 @@
-package org.adt.volunteerscase.entity;
+package org.adt.volunteerscase.entity.event;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.adt.volunteerscase.entity.CoverEntity;
+import org.adt.volunteerscase.entity.LocationEntity;
+import org.adt.volunteerscase.entity.TagEntity;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -28,8 +31,8 @@ public class EventEntity {
     @Column(nullable = false)
     private String name;
 
-    @Lob // Для длинного текста в БД
-    @Column(columnDefinition = "TEXT")
+
+    @Column(length = 5000)
     private String description;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -42,7 +45,7 @@ public class EventEntity {
     private String coordinatorContact;                                  //Email/телефон координатора, есть проверка на формат Email или формат номера телефона
 
 
-    @NotBlank(message = "maxCapacity is blank")
+    @NotNull(message = "maxCapacity is blank")
     @Min(value = 1, message = "Max capacity must be greater than 0")
     @Column(name = "maxCapacity", nullable = false)
     private Integer maxCapacity;                                        //максимум участников >0
