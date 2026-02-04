@@ -8,6 +8,9 @@ ARG RUN_TESTS=false
 # Copy Maven wrapper and pom.xml
 COPY pom.xml .
 
+# Install dependencies to speed up build
+RUN mvn dependency:resolve
+
 # Copy source code
 COPY src ./src
 
