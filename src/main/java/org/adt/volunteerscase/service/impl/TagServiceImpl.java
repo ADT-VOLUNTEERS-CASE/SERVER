@@ -93,19 +93,17 @@ public class TagServiceImpl implements TagService {
     @Override
     @Transactional
     public void deleteById(Integer tagId) {
-        if (!tagRepository.existsById(tagId)) {
-            throw new TagNotFoundException("tag with id - " + tagId + " not found");
-        }
-        tagRepository.deleteById(tagId);
+        TagEntity tagEntity = tagRepository.findByTagId(tagId)
+                .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
+        tagRepository.delete(tagEntity);
     }
 
     @Override
     @Transactional
     public void deleteByName(String tagName) {
-        if (!tagRepository.existsByTagName(tagName)) {
-            throw new TagNotFoundException("tag with name - " + tagName + " not found");
-        }
-        tagRepository.deleteByTagName(tagName);
+        TagEntity tagEntity = tagRepository.findByTagName(tagName)
+                .orElseThrow(() -> new TagNotFoundException("tag with name - " + tagName + " not found"));
+        tagRepository.delete(tagEntity);
     }
 
     @Override

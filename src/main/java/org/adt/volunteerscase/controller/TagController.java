@@ -12,6 +12,7 @@ import org.adt.volunteerscase.dto.tag.request.TagCreateRequest;
 import org.adt.volunteerscase.dto.tag.request.TagUpdateRequest;
 import org.adt.volunteerscase.dto.tag.response.TagGetResponse;
 import org.adt.volunteerscase.service.TagService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +26,7 @@ public class TagController {
     @Operation(
             summary = "создание тега",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "успешно создано"),
+                    @ApiResponse(responseCode = "201", description = "успешно создано"),
                     @ApiResponse(responseCode = "409", description = "тэг с таким именем уже существует", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "400", description = "невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
@@ -34,7 +35,7 @@ public class TagController {
     @PostMapping("/create")
     public ResponseEntity<?> createTag(@Valid @RequestBody TagCreateRequest request) {
         tagService.createTag(request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(
@@ -93,7 +94,7 @@ public class TagController {
             summary = "получение информации о теге по его id",
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно"),
-                    @ApiResponse(responseCode = "404", description = "тег с таким id не найден"),
+                    @ApiResponse(responseCode = "404", description = "тег с таким id не найден", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")
@@ -108,7 +109,7 @@ public class TagController {
             summary = "получение информации о теге по его имени",
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно"),
-                    @ApiResponse(responseCode = "404", description = "тег с таким именем не найден"),
+                    @ApiResponse(responseCode = "404", description = "тег с таким именем не найден", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")
