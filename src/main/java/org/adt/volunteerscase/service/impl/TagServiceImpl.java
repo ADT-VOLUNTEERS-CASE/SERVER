@@ -2,6 +2,8 @@ package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.tag.request.TagCreateRequest;
+import org.adt.volunteerscase.dto.tag.request.TagUpdateRequest;
+import org.adt.volunteerscase.dto.tag.response.TagGetResponse;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.exception.TagAlreadyExistsException;
 import org.adt.volunteerscase.exception.TagNotFoundException;
@@ -70,5 +72,61 @@ public class TagServiceImpl implements TagService {
         } catch (DataIntegrityViolationException ex) {
             throw new TagAlreadyExistsException("tag with name - " + tagName + " already exists");
         }
+    }
+
+    @Override
+    public void updateTag(TagUpdateRequest request, Integer tagId) {
+
+
+        TagEntity tagEntity = tagRepository.findByTagId(tagId)
+                .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
+
+        if (tagRepository.existsByTagName(request.getTagName())) {
+            throw new TagAlreadyExistsException("tag with name - " + request.getTagName() + " already exists");
+        }
+
+        tagEntity.setTagName(request.getTagName());
+        tagRepository.save(tagEntity);
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(Integer tagId) {
+        if (!tagRepository.existsById(tagId)) {
+            throw new TagNotFoundException("tag with id - " + tagId + " not found");
+        }
+        tagRepository.deleteById(tagId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteByName(String tagName) {
+        if (!tagRepository.existsByTagName(tagName)) {
+            throw new TagNotFoundException("tag with name - " + tagName + " not found");
+        }
+        tagRepository.deleteByTagName(tagName);
+    }
+
+    @Override
+    public TagGetResponse getById(Integer tagId) {
+        TagEntity tagEntity = tagRepository.findByTagId(tagId)
+                .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
+
+        return convertToResponse(tagEntity);
+    }
+
+    @Override
+    public TagGetResponse getByName(String tagName) {
+        TagEntity tagEntity = tagRepository.findByTagName(tagName)
+                .orElseThrow(() -> new TagNotFoundException("tag with name - " + tagName + " not found"));
+
+        return convertToResponse(tagEntity);
+    }
+
+    private TagGetResponse convertToResponse(TagEntity tagEntity) {
+        return TagGetResponse.builder()
+                .tagName(tagEntity.getTagName())
+                .tagId(tagEntity.getTagId())
+                .build();
     }
 }

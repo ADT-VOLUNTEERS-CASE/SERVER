@@ -3,6 +3,7 @@ package org.adt.volunteerscase.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -52,6 +53,9 @@ public class SecurityConfig {
                                 .requestMatchers("/api/v1/adminping", "/api/v1/auth/register/**").hasAuthority("ROLE_ADMIN")
                                 .requestMatchers("/api/v1/coordinatorping", "/api/v1/cover/create", "/api/v1/tag/create", "/api/v1/event/update/**", "/api/v1/event/create", "/api/v1/event/delete/**").hasAuthority("ROLE_COORDINATOR")
                                 .requestMatchers("/api/v1/location/create", "/api/v1/location/update/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_COORDINATOR")
+                                .requestMatchers(HttpMethod.GET, "/api/v1/tag/id/**", "/api/v1/tag/name/**").authenticated()
+                                .requestMatchers(HttpMethod.DELETE, "/api/v1/tag/id/**", "/api/v1/tag/name/**").hasAuthority("ROLE_COORDINATOR")
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/tag/**").hasAuthority("ROLE_COORDINATOR")
                                 .anyRequest()
                                 .authenticated()
                 )
