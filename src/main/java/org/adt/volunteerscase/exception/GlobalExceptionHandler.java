@@ -94,7 +94,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TagAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleTagAlreadyExistsException(TagAlreadyExistsException ex){
-        ErrorResponse errorResponse = new ErrorResponse("TAG_NAME_ALREADY_EXSISTS", ex.getMessage(), LocalDateTime.now());
+        ErrorResponse errorResponse = new ErrorResponse("TAG_NAME_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
