@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.entity.user.UserAuthEntity;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.repository.UserRepository;
-import org.adt.volunteerscase.service.RefreshTokenService;
+import org.adt.volunteerscase.service.security.RefreshTokenService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
