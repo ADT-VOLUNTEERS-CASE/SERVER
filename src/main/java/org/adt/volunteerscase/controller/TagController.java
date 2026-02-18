@@ -82,7 +82,7 @@ public class TagController {
     )
     @SecurityRequirement(name = "jwtAuth")
     @DeleteMapping("/name/{tagName}")
-    public ResponseEntity<?> deleteTagById(
+    public ResponseEntity<?> deleteTagByName(
             @PathVariable String tagName
     ) {
         tagService.deleteByName(tagName);
@@ -94,7 +94,6 @@ public class TagController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно"),
                     @ApiResponse(responseCode = "404", description = "тег с таким id не найден"),
-                    @ApiResponse(responseCode = "400", description = "некорректный формат json или некорректное заполнение полей json", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")
@@ -110,7 +109,6 @@ public class TagController {
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно"),
                     @ApiResponse(responseCode = "404", description = "тег с таким именем не найден"),
-                    @ApiResponse(responseCode = "400", description = "некорректный формат json или некорректное заполнение полей json", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")

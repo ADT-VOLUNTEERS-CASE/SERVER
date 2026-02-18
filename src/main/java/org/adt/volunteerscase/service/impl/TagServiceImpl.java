@@ -75,6 +75,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Transactional
     public void updateTag(TagUpdateRequest request, Integer tagId) {
 
 
