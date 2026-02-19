@@ -74,7 +74,7 @@ public class CoverController {
             summary = "получение обложки по id",
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно"),
-                    @ApiResponse(responseCode = "404", description = "обложки с таким id не найдены")
+                    @ApiResponse(responseCode = "404", description = "обложки с таким id не найдены", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")

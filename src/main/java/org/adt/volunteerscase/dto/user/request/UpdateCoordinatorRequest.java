@@ -28,9 +28,8 @@ public class UpdateCoordinatorRequest {
     @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "Phone must be in E.164 format")
     private String phoneNumber;
 
-    @Size(min = 1, max = 255, message = "Email max length is 255")
+    @Size(min = 1, max = 255, message = "Email length min is 1, max is 255")
     @Email(message = "incorrect email format")
-    @Size(max = 255, message = "Email max length is 255")
     private String email;
 
 }
