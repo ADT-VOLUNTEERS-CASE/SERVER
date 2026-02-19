@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.URL;
 
 @Data
 @Builder
@@ -15,7 +16,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CoverPatchRequest {
 
-    @Size(min = 1, message = "link is blank")
+    @URL(message = "invalid link")
     private String link;
 
     @Min(value = 1, message = "width must be greater than 0")

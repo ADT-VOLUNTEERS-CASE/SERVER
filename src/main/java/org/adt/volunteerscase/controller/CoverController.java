@@ -25,7 +25,7 @@ public class CoverController {
     @Operation(
             summary = "эндпоинт для создания обложки",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "успешно создано"),
+                    @ApiResponse(responseCode = "201", description = "успешно создано"),
                     @ApiResponse(responseCode = "400", description = "Невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
@@ -33,7 +33,7 @@ public class CoverController {
     @PostMapping("/create")
     public ResponseEntity<?> createCover(@Valid @RequestBody CoverCreateRequest request) {
         coverService.coverCreateRequest(request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(
@@ -56,7 +56,7 @@ public class CoverController {
     @Operation(
             summary = "удаление обложки",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "успешно удалено"),
+                    @ApiResponse(responseCode = "204", description = "успешно удалено"),
                     @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )

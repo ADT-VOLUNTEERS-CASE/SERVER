@@ -9,6 +9,7 @@ import org.adt.volunteerscase.exception.CoverNotFoundException;
 import org.adt.volunteerscase.repository.CoverRepository;
 import org.adt.volunteerscase.service.CoverService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,6 +18,7 @@ public class CoverServiceImpl implements CoverService {
     private final CoverRepository coverRepository;
 
     @Override
+    @Transactional
     public void coverCreateRequest(CoverCreateRequest request) {
         CoverEntity coverEntity = CoverEntity.builder()
                 .link(request.getLink())
@@ -26,6 +28,7 @@ public class CoverServiceImpl implements CoverService {
     }
 
     @Override
+    @Transactional
     public CoverPatchResponse updateCover(CoverPatchRequest request, Integer coverId) {
         CoverEntity coverEntity = coverRepository.findByCoverId(coverId)
                 .orElseThrow(() -> new CoverNotFoundException("cover with id - " + coverId + " not found"));
@@ -47,6 +50,7 @@ public class CoverServiceImpl implements CoverService {
     }
 
     @Override
+    @Transactional
     public void deleteCoverById(Integer coverId) {
         CoverEntity coverEntity = coverRepository.findByCoverId(coverId)
                 .orElseThrow(() -> new CoverNotFoundException("cover with id - " + coverId + " not found"));
