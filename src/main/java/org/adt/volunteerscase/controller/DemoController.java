@@ -17,7 +17,7 @@ public class DemoController {
      */
 
     @Operation(
-            summary = "ping pong"
+            summary = "базовый ping"
     )
     @GetMapping("/ping")
     public ResponseEntity<String> ping() {
@@ -25,7 +25,7 @@ public class DemoController {
     }
 
     @Operation(
-            summary = "ping pong with auth"
+            summary = "ping, доступный только после входа"
     )
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/authping")
@@ -34,7 +34,7 @@ public class DemoController {
     }
 
     @Operation(
-            summary = "ping pong only with role admin"
+            summary = "ping, доступный только с ролью админа"
     )
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/adminping")
@@ -43,7 +43,7 @@ public class DemoController {
     }
 
     @Operation(
-            summary = "ping pong only with role coordinator"
+            summary = "ping, доступный только с ролью координатора"
     )
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/coordinatorping")

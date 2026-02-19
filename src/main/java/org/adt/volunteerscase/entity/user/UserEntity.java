@@ -43,7 +43,7 @@ public class UserEntity{
 
     @Size(max = 100, message = "Patronymic max length is 100")
     @Column(name = "patronymic", length = 100)
-    private String patronymic;                                  //отчество, длина  <= 100, может не быть
+    private String patronymic;                                  //отчество, длина <= 100, может не быть
 
     @NotBlank(message = "Phone number is null")
     @Column(unique = true)
@@ -65,7 +65,7 @@ public class UserEntity{
     private boolean isCoordinator = false;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private UserAuthEntity userAuth;                            //связь один к одному с таблицей user_auth, при удалении записи в users удалиться соответствуйщий user_auth
+    private UserAuthEntity userAuth;                            //связь один к одному с таблицей user_auth, при удалении записи в users удалиться соответствующий user_auth
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
