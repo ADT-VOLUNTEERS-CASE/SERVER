@@ -25,7 +25,7 @@ public class DemoController {
     }
 
     @Operation(
-            summary = "ping доступный только после входа"
+            summary = "ping, доступный только после входа"
     )
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/authping")
@@ -34,7 +34,7 @@ public class DemoController {
     }
 
     @Operation(
-            summary = "ping доступный только с ролью админа"
+            summary = "ping, доступный только с ролью админа"
     )
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/adminping")
@@ -43,7 +43,7 @@ public class DemoController {
     }
 
     @Operation(
-            summary = "ping доступный только с ролью координатора"
+            summary = "ping, доступный только с ролью координатора"
     )
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/coordinatorping")

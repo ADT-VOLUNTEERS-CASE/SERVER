@@ -27,7 +27,7 @@ public class TagController {
             summary = "создание тега",
             responses = {
                     @ApiResponse(responseCode = "201", description = "успешно создано"),
-                    @ApiResponse(responseCode = "409", description = "тэг с таким именем уже существует", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "тег с таким именем уже существует", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "400", description = "невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )

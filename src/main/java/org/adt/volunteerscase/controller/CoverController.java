@@ -9,12 +9,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.ErrorResponse;
 import org.adt.volunteerscase.dto.cover.request.CoverCreateRequest;
+import org.adt.volunteerscase.dto.cover.request.CoverPatchRequest;
 import org.adt.volunteerscase.service.CoverService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("api/v1/cover")
@@ -32,8 +31,41 @@ public class CoverController {
     )
     @SecurityRequirement(name = "jwtAuth")
     @PostMapping("/create")
-    public ResponseEntity<?> createCover(@Valid @RequestBody CoverCreateRequest request){
+    public ResponseEntity<?> createCover(@Valid @RequestBody CoverCreateRequest request) {
         coverService.coverCreateRequest(request);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "обновление полей обложки",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "успешно обновлено"),
+                    @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "400", description = "некорректный формат json или некорректное заполнение полей json", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @PatchMapping("/{coverId}")
+    public ResponseEntity<?> updateCover(
+            @PathVariable Integer coverId,
+            @Valid @RequestBody CoverPatchRequest request
+    ) {
+        return ResponseEntity.ok().body(coverService.updateCover(request, coverId));
+    }
+
+    @Operation(
+            summary = "удаление обложки",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "успешно удалено"),
+                    @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @DeleteMapping("/{coverId}")
+    public ResponseEntity<?> deleteCoverById(
+            @PathVariable Integer coverId
+    ) {
+        coverService.deleteCoverById(coverId);
+        return ResponseEntity.noContent().build();
     }
 }
