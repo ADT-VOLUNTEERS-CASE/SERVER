@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.adt.volunteerscase.dto.tag.TagEntityDTO;
+import org.adt.volunteerscase.dto.tag.response.TagGetResponse;
 import org.adt.volunteerscase.entity.TagEntity;
 
 import java.util.Set;
@@ -26,5 +28,5 @@ public class GetUserResponse {
     private boolean isAdmin;
     private boolean isCoordinator;
 
-    private Set<TagEntity> tags;
+    private Set<TagEntityDTO> tags;
 }

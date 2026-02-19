@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.ErrorResponse;
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
+import org.adt.volunteerscase.entity.user.UserDetailsImpl;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class UserController {
     private final UserService userService;
 
     @Operation(
-            summary = "обновление информации и координаторе по его id",
+            summary = "обновление информации о координаторе по его id",
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно обновлено"),
                     @ApiResponse(responseCode = "409", description = "пользователь с таким email или номером телефона уже существует", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
@@ -43,7 +44,7 @@ public class UserController {
     }
 
     @Operation(
-            summary = "обновление информации и координаторе по его email",
+            summary = "обновление информации о координаторе по его email",
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно обновлено"),
                     @ApiResponse(responseCode = "409", description = "пользователь с таким email или номером телефона уже существует", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
@@ -105,8 +106,8 @@ public class UserController {
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/me")
     public ResponseEntity<GetUserResponse> getCurrentUser(
-            @AuthenticationPrincipal UserEntity currentUser
+            @AuthenticationPrincipal UserDetailsImpl currentUser
     ) {
-        return ResponseEntity.ok().body(userService.getCurrentUser(currentUser));
+        return ResponseEntity.ok().body(userService.getCurrentUser(currentUser.getUser()));
     }
 }

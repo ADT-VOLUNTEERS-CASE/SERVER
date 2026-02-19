@@ -80,7 +80,7 @@ public class CoverController {
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/{coverId}")
     public ResponseEntity<CoverResponse> getCoverById(
-            @RequestBody Integer coverId
+            @PathVariable Integer coverId
     ) {
         return ResponseEntity.ok().body(coverService.getCoverById(coverId));
     }
