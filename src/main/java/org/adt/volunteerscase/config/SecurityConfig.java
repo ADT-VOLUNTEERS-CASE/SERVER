@@ -60,9 +60,11 @@ public class SecurityConfig {
 
                                 .requestMatchers(HttpMethod.GET, "/api/v1/cover/**").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/cover/**").hasAuthority("ROLE_COORDINATOR")
-                                .requestMatchers(HttpMethod.PATCH, "/api/v1/cover/**").hasAuthority("ROLE_COORDINATOR").anyRequest()
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/cover/**").hasAuthority("ROLE_COORDINATOR")
 
-                                .authenticated()
+                                .requestMatchers(HttpMethod.GET, "/api/v1/user/me").authenticated()
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/user/coordinator/**").hasAuthority("ROLE_COORDINATOR")
+                                .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

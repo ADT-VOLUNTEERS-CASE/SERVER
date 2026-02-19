@@ -121,4 +121,10 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse("JSON_FORMAT_ERROR", "incorrect json format, check the commas and quotation marks", LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+    @ExceptionHandler(UserNotCoordinatorException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotCoordinatorException(UserNotCoordinatorException ex){
+        ErrorResponse errorResponse = new ErrorResponse("ACCESS_DENIED", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
 }
