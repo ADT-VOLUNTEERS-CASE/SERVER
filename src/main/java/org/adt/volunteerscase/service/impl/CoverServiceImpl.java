@@ -3,7 +3,7 @@ package org.adt.volunteerscase.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.cover.request.CoverCreateRequest;
 import org.adt.volunteerscase.dto.cover.request.CoverPatchRequest;
-import org.adt.volunteerscase.dto.cover.response.CoverPatchResponse;
+import org.adt.volunteerscase.dto.cover.response.CoverResponse;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.exception.CoverNotFoundException;
 import org.adt.volunteerscase.repository.CoverRepository;
@@ -29,7 +29,7 @@ public class CoverServiceImpl implements CoverService {
 
     @Override
     @Transactional
-    public CoverPatchResponse updateCover(CoverPatchRequest request, Integer coverId) {
+    public CoverResponse updateCover(CoverPatchRequest request, Integer coverId) {
         CoverEntity coverEntity = coverRepository.findByCoverId(coverId)
                 .orElseThrow(() -> new CoverNotFoundException("cover with id - " + coverId + " not found"));
 
@@ -58,8 +58,16 @@ public class CoverServiceImpl implements CoverService {
         coverRepository.delete(coverEntity);
     }
 
-    private CoverPatchResponse convertToResponse(CoverEntity coverEntity) {
-        return CoverPatchResponse.builder()
+    @Override
+    public CoverResponse getCoverById(Integer coverId) {
+        CoverEntity coverEntity = coverRepository.findByCoverId(coverId)
+                .orElseThrow(() -> new CoverNotFoundException("cover with id - " + coverId + " not found"));
+
+        return convertToResponse(coverEntity);
+    }
+
+    private CoverResponse convertToResponse(CoverEntity coverEntity) {
+        return CoverResponse.builder()
                 .coverId(coverEntity.getCoverId())
                 .link(coverEntity.getLink())
                 .height(coverEntity.getHeight())

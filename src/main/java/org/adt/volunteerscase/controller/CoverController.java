@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.ErrorResponse;
 import org.adt.volunteerscase.dto.cover.request.CoverCreateRequest;
 import org.adt.volunteerscase.dto.cover.request.CoverPatchRequest;
+import org.adt.volunteerscase.dto.cover.response.CoverResponse;
 import org.adt.volunteerscase.service.CoverService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -67,5 +68,20 @@ public class CoverController {
     ) {
         coverService.deleteCoverById(coverId);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "получение обложки по id",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "успешно"),
+                    @ApiResponse(responseCode = "404", description = "обложки с таким id не найдены")
+            }
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @GetMapping("/{coverId}")
+    public ResponseEntity<CoverResponse> getCoverById(
+            @RequestBody Integer coverId
+    ) {
+        return ResponseEntity.ok().body(coverService.getCoverById(coverId));
     }
 }
