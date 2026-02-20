@@ -141,29 +141,35 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private UserEntity createUser(String firstname, String lastname, String patronymic, String email, String phoneNumber, boolean isCoordinator, boolean isAdmin, String password) {
-        if (!userRepository.existsByEmail(email) && !userRepository.existsByPhoneNumber(phoneNumber)) {
 
-            UserAuthEntity userAuth = UserAuthEntity.builder()
-                    .passwordHash(passwordEncoder.encode(password))
-                    .build();
-
-            UserEntity user = UserEntity.builder()
-                    .firstname(firstname)
-                    .lastname(lastname)
-                    .patronymic(patronymic)
-                    .email(email)
-                    .phoneNumber(phoneNumber)
-                    .isAdmin(isAdmin)
-                    .userAuth(userAuth)
-                    .isCoordinator(isCoordinator).build();
-
-
-            userAuth.setUser(user);
-            userRepository.save(user);
-            refreshTokenService.createRefreshToken(user);
+        if (userRepository.existsByEmail(email)) {
+            return userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UserNotFoundException("user with email - " + email + " not found"));
         }
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("user with email - " + email + " not found"));
+
+        if (userRepository.existsByPhoneNumber(phoneNumber)) {
+            return userRepository.findByPhoneNumber(phoneNumber)
+                    .orElseThrow(() -> new UserNotFoundException("user with phone number - " + phoneNumber + " not found"));
+        }
+        UserAuthEntity userAuth = UserAuthEntity.builder()
+                .passwordHash(passwordEncoder.encode(password))
+                .build();
+
+        UserEntity user = UserEntity.builder()
+                .firstname(firstname)
+                .lastname(lastname)
+                .patronymic(patronymic)
+                .email(email)
+                .phoneNumber(phoneNumber)
+                .isAdmin(isAdmin)
+                .userAuth(userAuth)
+                .isCoordinator(isCoordinator).build();
+
+
+        userAuth.setUser(user);
+        userRepository.save(user);
+        refreshTokenService.createRefreshToken(user);
+        return user;
     }
 
     private LocationEntity createLocation(String address, String additionalNotes, Double latitude, Double longitude) {
