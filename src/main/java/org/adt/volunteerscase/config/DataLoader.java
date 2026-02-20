@@ -129,7 +129,7 @@ public class DataLoader implements CommandLineRunner {
         EventEntity secondEvent = createEvent(
                 EventStatus.COMPLETED,
                 "second event",
-                "second event, ongoing",
+                "second event, completed",
                 secondCover,
                 "coordinator@example.com",
                 67,
@@ -199,16 +199,8 @@ public class DataLoader implements CommandLineRunner {
     private TagEntity createTag(String tagName, UserEntity currentUser) {
 
         if (tagRepository.existsByTagName(tagName)) {
-            TagEntity existsTag = tagRepository.findByTagName(tagName)
+            return tagRepository.findByTagName(tagName)
                     .orElseThrow(() -> new TagNotFoundException("tag with name - " + tagName + " not found"));
-
-            Integer tagId = existsTag.getTagId();
-
-            for (TagEntity tag : currentUser.getTags()) {
-                if (tag.getTagId().equals(tagId)) {
-                    return tag;
-                }
-            }
         }
 
         TagEntity tag = TagEntity.builder()
