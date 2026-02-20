@@ -1,10 +1,13 @@
 package org.adt.volunteerscase.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.adt.volunteerscase.dto.ErrorResponse;
 import org.adt.volunteerscase.dto.cover.request.CoverCreateRequest;
 import org.adt.volunteerscase.service.CoverService;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +26,8 @@ public class CoverController {
     @Operation(
             summary = "эндпоинт для создания обложки",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "успешно создано")
+                    @ApiResponse(responseCode = "200", description = "успешно создано"),
+                    @ApiResponse(responseCode = "400", description = "Невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")

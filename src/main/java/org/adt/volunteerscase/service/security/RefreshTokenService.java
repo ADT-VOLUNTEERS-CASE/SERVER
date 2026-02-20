@@ -1,11 +1,10 @@
-package org.adt.volunteerscase.service;
+package org.adt.volunteerscase.service.security;
 
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.entity.RefreshTokenEntity;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.exception.RefreshTokenException;
 import org.adt.volunteerscase.repository.RefreshTokenRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

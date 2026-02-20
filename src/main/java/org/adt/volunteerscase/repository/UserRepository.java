@@ -35,6 +35,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
  * @return an Optional containing the UserEntity with the given email, or an empty Optional if no user matches
  */
 Optional<UserEntity> findByEmail(String email);
+Optional<UserEntity> findByPhoneNumber(String phoneNumber);
 
     /**
  * Checks whether a user with the given email exists.

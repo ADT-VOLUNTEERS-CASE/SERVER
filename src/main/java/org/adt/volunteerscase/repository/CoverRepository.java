@@ -9,4 +9,8 @@ import java.util.Optional;
 @Repository
 public interface CoverRepository extends JpaRepository<CoverEntity, Integer> {
     Optional<CoverEntity> findByCoverId(Integer coverId);
+
+    boolean existsByLink(String link);
+
+    Optional<CoverEntity> findByLink(String link);
 }
