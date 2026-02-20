@@ -12,6 +12,8 @@ import java.util.Set;
 public interface TagRepository extends JpaRepository<TagEntity, Integer> {
 
     Optional<TagEntity> findByTagId(Integer tagId);
+    Optional<TagEntity> findByTagName(String tagName);
+
     List<TagEntity> findAllByTagIdIn(Set<Integer> tagIds);
     boolean existsByTagName(String tagName);
 }
