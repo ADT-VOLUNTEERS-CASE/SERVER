@@ -21,7 +21,7 @@ public class CoverEntity {
 
     @NotBlank(message = "link is blank")
     @Column(nullable = false, length = 500)
-    private String link;                                      //ссылка на изображние, может быть большой, поэтому длина 500
+    private String link;                                      //ссылка на изображение, может быть большой, поэтому длина 500
 
     @NotNull(message = "width is blank")
     @Min(value = 1, message = "width must be greater than 0")

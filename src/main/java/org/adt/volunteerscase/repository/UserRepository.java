@@ -30,26 +30,28 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     Optional<UserEntity> findByPhoneNumberWithAuth(@Param("phone") String phone);
 
     /**
- * Finds a user with the given email.
- *
- * @return an Optional containing the UserEntity with the given email, or an empty Optional if no user matches
- */
-Optional<UserEntity> findByEmail(String email);
+     * Finds a user with the given email.
+     *
+     * @return an Optional containing the UserEntity with the given email, or an empty Optional if no user matches
+     */
+    Optional<UserEntity> findByEmail(String email);
+
+    Optional<UserEntity> findById(Integer id);
 
     /**
- * Checks whether a user with the given email exists.
- *
- * @param email the email address to check for an existing user
- * @return `true` if a user with the given email exists, `false` otherwise
- */
-boolean existsByEmail(String email);
+     * Checks whether a user with the given email exists.
+     *
+     * @param email the email address to check for an existing user
+     * @return `true` if a user with the given email exists, `false` otherwise
+     */
+    boolean existsByEmail(String email);
 
     /**
- * Checks whether a user with the given phone number exists.
- *
- * @param phoneNumber the phone number to check for existence
- * @return `true` if a user with the given phone number exists, `false` otherwise
- */
-boolean existsByPhoneNumber(String phoneNumber);
+     * Checks whether a user with the given phone number exists.
+     *
+     * @param phoneNumber the phone number to check for existence
+     * @return `true` if a user with the given phone number exists, `false` otherwise
+     */
+    boolean existsByPhoneNumber(String phoneNumber);
 
 }
