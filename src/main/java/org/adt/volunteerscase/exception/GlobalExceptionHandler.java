@@ -4,9 +4,12 @@ import org.adt.volunteerscase.dto.ErrorResponse;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.LocalDateTime;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -19,7 +22,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(UserNotFoundException ex) {
-        ErrorResponse error = new ErrorResponse("USER_NOT_FOUND", ex.getMessage());
+        ErrorResponse error = new ErrorResponse("USER_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
@@ -31,7 +34,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(InvalidPasswordException.class)
     public ResponseEntity<ErrorResponse> handleInvalidPassword(InvalidPasswordException ex) {
-        ErrorResponse error = new ErrorResponse("INVALID_PASSWORD", ex.getMessage());
+        ErrorResponse error = new ErrorResponse("INVALID_PASSWORD", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
@@ -43,7 +46,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleInvalidValidation(MethodArgumentNotValidException ex) {
-        ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", ex.getMessage());
+        ErrorResponse error = new ErrorResponse("VALIDATION_ERROR", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -55,7 +58,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        ErrorResponse error = new ErrorResponse("USER_ALREADY_EXISTS", ex.getMessage());
+        ErrorResponse error = new ErrorResponse("USER_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
@@ -67,49 +70,61 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(RefreshTokenException.class)
     public ResponseEntity<ErrorResponse> handleRefreshTokenExpired(RefreshTokenException ex) {
-        ErrorResponse error = new ErrorResponse("REFRESH_TOKEN_EXPIRED", ex.getMessage());
+        ErrorResponse error = new ErrorResponse("REFRESH_TOKEN_EXPIRED", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
     @ExceptionHandler(EventNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEventNotFoundException(EventNotFoundException ex){
-        ErrorResponse errorResponse = new ErrorResponse("EVENT_NOT_FOUND", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("EVENT_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(CoverNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCoverNotFoundException(CoverNotFoundException ex){
-        ErrorResponse errorResponse = new ErrorResponse("COVER_NOT_FOUND", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("COVER_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(TagNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleTagNotFoundException(TagNotFoundException ex){
-        ErrorResponse errorResponse = new ErrorResponse("TAG_NOT_FOUND", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("TAG_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(TagAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleTagAlreadyExistsException(TagAlreadyExistsException ex){
-        ErrorResponse errorResponse = new ErrorResponse("TAG_NAME_ALREADY_EXSISTS", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("TAG_NAME_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(LocationAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleLocationAlreadyExistsException(LocationAlreadyExistsException ex){
-        ErrorResponse errorResponse = new ErrorResponse("LOCATION_ALREADY_EXISTS", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("LOCATION_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(CoverAlreadyExistsException.class)
     public ResponseEntity<ErrorResponse> handleCoverAlreadyExistsException(CoverAlreadyExistsException ex){
-        ErrorResponse errorResponse = new ErrorResponse("COVER_ALREADY_EXISTS", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("COVER_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(LocationNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleLocationNotFoundException(LocationNotFoundException ex){
-        ErrorResponse errorResponse = new ErrorResponse("LOCATION_NOT_FOUND", ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse("LOCATION_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("JSON_FORMAT_ERROR", "incorrect json format, check the commas and quotation marks", LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(UserNotCoordinatorException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotCoordinatorException(UserNotCoordinatorException ex){
+        ErrorResponse errorResponse = new ErrorResponse("ACCESS_DENIED", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 }
