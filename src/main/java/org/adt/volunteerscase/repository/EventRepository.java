@@ -7,17 +7,25 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
 public interface EventRepository extends JpaRepository<EventEntity, Integer> {
 
     Optional<EventEntity> findByEventId(Integer eventId);
+    Optional<EventEntity> findByName(String name);
+
 
     boolean existsByLocation(LocationEntity locationEntity);
+
     boolean existsByCover(CoverEntity coverEntity);
 
+    boolean existsByName(String name);
+
     boolean existsByLocationAndEventIdNot(LocationEntity location, Integer eventId);
+
     boolean existsByCoverAndEventIdNot(CoverEntity cover, Integer eventId);
 
     Page<EventEntity> findAllByOrderByDateTimestampDesc(Pageable pageable);

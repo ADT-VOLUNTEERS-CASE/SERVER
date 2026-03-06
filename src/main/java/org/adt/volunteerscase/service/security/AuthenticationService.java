@@ -1,4 +1,4 @@
-package org.adt.volunteerscase.service;
+package org.adt.volunteerscase.service.security;
 
 
 import lombok.RequiredArgsConstructor;
