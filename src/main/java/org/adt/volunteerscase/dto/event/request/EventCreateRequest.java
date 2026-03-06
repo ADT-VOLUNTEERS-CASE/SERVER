@@ -1,5 +1,6 @@
 package org.adt.volunteerscase.dto.event.request;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,19 +14,21 @@ import java.util.Set;
 
 @Data
 @Builder
- @AllArgsConstructor
+@AllArgsConstructor
 @NoArgsConstructor
 public class EventCreateRequest {
 
+    @Schema(description = "name for event")
     @NotBlank(message = "name is null")
     private String name;
 
-
+    @Schema(description = "status for event")
     @NotNull(message = "Status cannot be null")
     @Pattern(regexp = "^(ONGOING|IN_PROGRESS|COMPLETED)$",
             message = "Status must be one of: ONGOING, IN_PROGRESS, COMPLETED")
     private String status;
 
+    @Schema(description = "description")
     @Size(max = 5000, message = "Description max length is 5000")
     private String description;
 
