@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -142,11 +143,15 @@ public class EventServiceImpl implements EventService {
         }
 
 
-        if (request.getTagIds() != null) {
-            if (Boolean.TRUE.equals(request.getClearTags())) {
-                event.getTags().clear();
-            }
+        if (Boolean.TRUE.equals(request.getClearTags()) && request.getTagIds() != null) {
+            throw new SimultaneouslyCleaningAndWritingTagsException("clearTags and tagIds cannot be used together");
+        }
 
+        if (Boolean.TRUE.equals(request.getClearTags())) {
+            event.setTags(new HashSet<>());
+        }
+
+        if (request.getTagIds() != null) {
             Set<TagEntity> tags = tagService.getTagEntities(request.getTagIds());
             event.setTags(tags);
         }

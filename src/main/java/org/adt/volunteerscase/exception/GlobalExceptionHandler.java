@@ -134,4 +134,10 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse("USER_NOT_COORDINATOR", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
+
+    @ExceptionHandler(SimultaneouslyCleaningAndWritingTagsException.class)
+    public ResponseEntity<ErrorResponse> handleSimultaneouslyCleaningAndWritingTagsException(SimultaneouslyCleaningAndWritingTagsException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("SIMULTANEIUSLU_CLEANING_AND_WRITING_TAGS", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 }

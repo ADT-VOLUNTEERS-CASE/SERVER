@@ -20,6 +20,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +45,7 @@ public class AuthenticationService {
      * @return an AuthenticationResponse containing an access token and a refresh token
      * @throws UserAlreadyExistsException if a user with the given email or phone number already exists
      */
+    @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new UserAlreadyExistsException("User with email " + request.getEmail() + " already exists");
@@ -75,6 +77,7 @@ public class AuthenticationService {
                 .build();
     }
 
+    @Transactional
     public AuthenticationResponse registerCoordinator(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -113,6 +116,7 @@ public class AuthenticationService {
 
     }
 
+    @Transactional
     public AuthenticationResponse registerAdmin(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -158,6 +162,7 @@ public class AuthenticationService {
      * @return an AuthenticationResponse containing a newly issued access token and the rotated refresh token
      * @throws RefreshTokenException if the provided refresh token is not found
      */
+    @Transactional
     public AuthenticationResponse refreshToken(TokenRefreshRequest request) {
         RefreshTokenEntity oldToken = refreshTokenService.findByToken(request.getRefreshToken())
                 .orElseThrow(() -> new RefreshTokenException("Refresh token not found"));
@@ -182,6 +187,7 @@ public class AuthenticationService {
      * @throws UserNotFoundException    if no user exists with the provided email
      * @throws InvalidPasswordException if the provided password is incorrect
      */
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         String email = request.getEmail();
         if (!userRepository.existsByEmail(email)) {

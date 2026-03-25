@@ -20,6 +20,7 @@ public interface TagRepository extends JpaRepository<TagEntity, Integer> {
     List<TagEntity> findAllByTagIdIn(Set<Integer> tagIds);
 
     boolean existsByTagName(String tagName);
+    boolean existsByTagNameAndTagIdNot(String tagName, Integer tagId);
 
     void deleteByTagName(String tag);
 

@@ -16,8 +16,8 @@ import java.util.Set;
 @NoArgsConstructor
 public class EventPatchRequest {
 
+    @Pattern(regexp = ".*\\S.*", message = "name must not be blank")
     @Size(max = 255, message = "Name max length is 255")
-    @NotBlank(message = "name is blank")
     private String name;
 
     @Size(max = 5000, message = "Description max length is 5000")
