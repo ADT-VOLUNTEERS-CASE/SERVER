@@ -1,9 +1,6 @@
 package org.adt.volunteerscase.dto.event.request;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,6 +17,7 @@ import java.util.Set;
 public class EventPatchRequest {
 
     @Size(max = 255, message = "Name max length is 255")
+    @NotBlank(message = "name is blank")
     private String name;
 
     @Size(max = 5000, message = "Description max length is 5000")

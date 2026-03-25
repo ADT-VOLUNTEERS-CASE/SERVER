@@ -5,8 +5,10 @@ import org.adt.volunteerscase.dto.cover.request.CoverCreateRequest;
 import org.adt.volunteerscase.dto.cover.request.CoverPatchRequest;
 import org.adt.volunteerscase.dto.cover.response.CoverResponse;
 import org.adt.volunteerscase.entity.CoverEntity;
+import org.adt.volunteerscase.exception.CoverInUseException;
 import org.adt.volunteerscase.exception.CoverNotFoundException;
 import org.adt.volunteerscase.repository.CoverRepository;
+import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.service.CoverService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CoverServiceImpl implements CoverService {
 
     private final CoverRepository coverRepository;
+    private final EventRepository eventRepository;
 
     @Override
     @Transactional
@@ -54,6 +57,10 @@ public class CoverServiceImpl implements CoverService {
     public void deleteCoverById(Integer coverId) {
         CoverEntity coverEntity = coverRepository.findByCoverId(coverId)
                 .orElseThrow(() -> new CoverNotFoundException("cover with id - " + coverId + " not found"));
+
+        if (eventRepository.existsByCover(coverEntity)) {
+            throw new CoverInUseException("cover with id - " + coverId + " is used by event");
+        }
 
         coverRepository.delete(coverEntity);
     }

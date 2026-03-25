@@ -21,6 +21,7 @@ import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.LocationRepository;
 import org.adt.volunteerscase.service.EventService;
 import org.adt.volunteerscase.service.TagService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -50,9 +51,11 @@ public class EventServiceImpl implements EventService {
         if (request.getLocationId() != null) {
             locationEntity = locationRepository.findByLocationId(request.getLocationId())
                     .orElseThrow(() -> new LocationNotFoundException("location with id - " + request.getLocationId() + " not found"));
-
-            if (eventRepository.existsByLocation(locationEntity)) {
-                throw new LocationAlreadyExistsException("location with id - " + request.getLocationId() + " already exists");
+            if (eventRepository.existsByLocationAndDateTimestamp(locationEntity, request.getDateTimestamp())) {
+                throw new LocationAlreadyExistsException(
+                        "location with id - " + request.getLocationId()
+                                + " is occupied in date - " + request.getDateTimestamp()
+                );
             }
         }
 
@@ -76,7 +79,12 @@ public class EventServiceImpl implements EventService {
                 .tags(tagService.getTagEntities(request.getTagIds()))
                 .build();
 
-        eventRepository.save(eventEntity);
+        try {
+            eventRepository.saveAndFlush(eventEntity);
+        } catch (DataIntegrityViolationException ex) {
+            throw mapEventConstraintException(ex, eventEntity);
+        }
+
     }
 
     @Override
@@ -109,12 +117,17 @@ public class EventServiceImpl implements EventService {
         if (request.getLocationId() != null) {
             LocationEntity locationEntity = locationRepository.findByLocationId(request.getLocationId())
                     .orElseThrow(() -> new LocationNotFoundException("Location with id - " + request.getLocationId() + " not found"));
-            if (eventRepository.existsByLocationAndEventIdNot(locationEntity, eventId)) {
-                throw new LocationAlreadyExistsException("location with id - " + request.getLocationId() + " already exists");
-            }
             event.setLocation(locationEntity);
         }
 
+        if (request.getDateTimestamp() != null || request.getLocationId() != null) {
+            if (eventRepository.existsByLocationAndDateTimestampAndEventIdNot(event.getLocation(), event.getDateTimestamp(), eventId)) {
+                throw new LocationAlreadyExistsException(
+                        "location with id - " + event.getLocation().getLocationId()
+                                + " is occupied in date - " + event.getDateTimestamp()
+                );
+            }
+        }
         if (request.getCoverId() != null) {
             CoverEntity coverEntity = coverRepository.findByCoverId(request.getCoverId())
                     .orElseThrow(() -> new CoverNotFoundException("cover with id - " + request.getCoverId() + " not found"));
@@ -138,7 +151,13 @@ public class EventServiceImpl implements EventService {
             event.setTags(tags);
         }
 
-        EventEntity updateEvent = eventRepository.save(event);
+        EventEntity updateEvent;
+        try {
+            updateEvent = eventRepository.saveAndFlush(event);
+        } catch (DataIntegrityViolationException ex) {
+            throw mapEventConstraintException(ex, event);
+        }
+
 
         return PatchResponse.builder()
                 .eventId(eventId)
@@ -205,7 +224,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Transactional(readOnly = true)
-    private Set<TagEntityDTO> convertTagsToTagsDTO(Set<TagEntity> tagEntities){
+    private Set<TagEntityDTO> convertTagsToTagsDTO(Set<TagEntity> tagEntities) {
         if (tagEntities == null || tagEntities.isEmpty()) {
             return Collections.emptySet();
         }
@@ -214,15 +233,16 @@ public class EventServiceImpl implements EventService {
                 .map(this::convertTagToDTO)
                 .collect(Collectors.toSet());
     }
+
     @Transactional(readOnly = true)
-    private TagEntityDTO convertTagToDTO(TagEntity tag){
+    private TagEntityDTO convertTagToDTO(TagEntity tag) {
         return TagEntityDTO.builder()
                 .tagId(tag.getTagId())
                 .tagName(tag.getTagName()).build();
     }
 
     @Transactional(readOnly = true)
-    private LocationEntityDTO convertLocationToLocationDTO(LocationEntity location){
+    private LocationEntityDTO convertLocationToLocationDTO(LocationEntity location) {
         if (location == null) {
             return null;
         }
@@ -232,8 +252,9 @@ public class EventServiceImpl implements EventService {
                 .latitude(location.getLatitude())
                 .longitude(location.getLongitude()).build();
     }
+
     @Transactional(readOnly = true)
-    private CoverEntityDTO convertCoverToDTO(CoverEntity cover){
+    private CoverEntityDTO convertCoverToDTO(CoverEntity cover) {
         if (cover == null) {
             return null;
         }
@@ -244,5 +265,30 @@ public class EventServiceImpl implements EventService {
                 .height(cover.getHeight())
                 .build();
     }
+
+    private RuntimeException mapEventConstraintException(
+            DataIntegrityViolationException ex,
+            EventEntity event
+    ) {
+        String message = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : ex.getMessage();
+
+        if (message != null && message.contains("uk_event_cover")) {
+            return new CoverAlreadyExistsException(
+                    "cover with id - " + event.getCover().getCoverId() + " is already used by another event"
+            );
+        }
+
+        if (message != null && message.contains("uk_event_location_datetime")) {
+            return new LocationAlreadyExistsException(
+                    "location with id - " + event.getLocation().getLocationId()
+                            + " is occupied in date - " + event.getDateTimestamp()
+            );
+        }
+
+        return ex;
+    }
+
 
 }

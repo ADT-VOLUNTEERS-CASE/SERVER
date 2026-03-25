@@ -7,7 +7,9 @@ import org.adt.volunteerscase.dto.tag.response.TagGetResponse;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.exception.TagAlreadyExistsException;
 import org.adt.volunteerscase.exception.TagNotFoundException;
+import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.TagRepository;
+import org.adt.volunteerscase.repository.UserRepository;
 import org.adt.volunteerscase.service.TagService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -95,6 +97,7 @@ public class TagServiceImpl implements TagService {
     public void deleteById(Integer tagId) {
         TagEntity tagEntity = tagRepository.findByTagId(tagId)
                 .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
+        detachTagFromRelations(tagEntity.getTagId());
         tagRepository.delete(tagEntity);
     }
 
@@ -103,10 +106,12 @@ public class TagServiceImpl implements TagService {
     public void deleteByName(String tagName) {
         TagEntity tagEntity = tagRepository.findByTagName(tagName)
                 .orElseThrow(() -> new TagNotFoundException("tag with name - " + tagName + " not found"));
+        detachTagFromRelations(tagEntity.getTagId());
         tagRepository.delete(tagEntity);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TagGetResponse getById(Integer tagId) {
         TagEntity tagEntity = tagRepository.findByTagId(tagId)
                 .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
@@ -115,6 +120,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TagGetResponse getByName(String tagName) {
         TagEntity tagEntity = tagRepository.findByTagName(tagName)
                 .orElseThrow(() -> new TagNotFoundException("tag with name - " + tagName + " not found"));
@@ -127,5 +133,10 @@ public class TagServiceImpl implements TagService {
                 .tagName(tagEntity.getTagName())
                 .tagId(tagEntity.getTagId())
                 .build();
+    }
+
+    private void detachTagFromRelations(Integer tagId) {
+        tagRepository.deleteUserTagLinksByTagId(tagId);
+        tagRepository.deleteEventTagLinksByTagId(tagId);
     }
 }

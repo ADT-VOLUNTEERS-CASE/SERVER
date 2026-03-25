@@ -45,6 +45,7 @@ public class EventCreateRequest {
     @NotNull(message = "data is null")
     private LocalDateTime dateTimestamp;
 
+    @NotNull(message = "location id is null")
     private Integer locationId;
 
     private Set<Integer> tagIds;

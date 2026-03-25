@@ -2,12 +2,14 @@ package org.adt.volunteerscase.repository;
 
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
+import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.event.EventEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import javax.xml.stream.Location;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -19,14 +21,13 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
 
 
     boolean existsByLocation(LocationEntity locationEntity);
-
     boolean existsByCover(CoverEntity coverEntity);
-
     boolean existsByName(String name);
-
     boolean existsByLocationAndEventIdNot(LocationEntity location, Integer eventId);
-
     boolean existsByCoverAndEventIdNot(CoverEntity cover, Integer eventId);
-
+    boolean existsByTagsContaining(TagEntity tag);
+    boolean existsByDateTimestamp(LocalDateTime dateTimestamp);
+    boolean existsByLocationAndDateTimestamp(LocationEntity location, LocalDateTime dateTimestamp);
+    boolean existsByLocationAndDateTimestampAndEventIdNot(LocationEntity location, LocalDateTime dateTimestamp, Integer eventId);
     Page<EventEntity> findAllByOrderByDateTimestampDesc(Pageable pageable);
 }
