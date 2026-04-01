@@ -122,7 +122,8 @@ public class EventServiceImpl implements EventService {
         }
 
         if (request.getDateTimestamp() != null || request.getLocationId() != null) {
-            if (eventRepository.existsByLocationAndDateTimestampAndEventIdNot(event.getLocation(), event.getDateTimestamp(), eventId)) {
+            if (event.getLocation() != null &&
+                    eventRepository.existsByLocationAndDateTimestampAndEventIdNot(event.getLocation(), event.getDateTimestamp(), eventId)) {
                 throw new LocationAlreadyExistsException(
                         "location with id - " + event.getLocation().getLocationId()
                                 + " is occupied in date - " + event.getDateTimestamp()
@@ -177,8 +178,8 @@ public class EventServiceImpl implements EventService {
                 .locationAddress(updateEvent.getLocation() != null ? updateEvent.getLocation().getAddress() : null)
                 .tagIds(updateEvent.getTags() != null ?
                         updateEvent.getTags().stream()
-                                .map(TagEntity::getTagId)
-                                .collect(Collectors.toSet()) : null)
+                        .map(TagEntity::getTagId)
+                        .collect(Collectors.toSet()) : null)
                 .build();
     }
 

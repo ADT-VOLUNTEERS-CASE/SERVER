@@ -18,11 +18,9 @@ public class CoverPatchRequest {
     @URL(message = "invalid link")
     private String link;
 
-    @NotNull(message = "height is null")
     @Min(value = 1, message = "width must be greater than 0")
     private Integer width;
 
-    @NotNull(message = "height is null")
     @Min(value = 1, message = "height must be greater than 0")
     private Integer height;
 
