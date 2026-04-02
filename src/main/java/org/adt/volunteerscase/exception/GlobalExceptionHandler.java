@@ -121,4 +121,23 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse("JSON_FORMAT_ERROR", "incorrect json format, check the commas and quotation marks", LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+    @ExceptionHandler(CoverInUseException.class)
+    public ResponseEntity<ErrorResponse> handleCoverInUseException(CoverInUseException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("COVER_IN_USE", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+
+    @ExceptionHandler(UserNotCoordinatorException.class)
+    public ResponseEntity<ErrorResponse> handleUserNotCoordinatorException(UserNotCoordinatorException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("USER_NOT_COORDINATOR", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ExceptionHandler(SimultaneouslyCleaningAndWritingTagsException.class)
+    public ResponseEntity<ErrorResponse> handleSimultaneouslyCleaningAndWritingTagsException(SimultaneouslyCleaningAndWritingTagsException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("SIMULTANEOUSLY_CLEANING_AND_WRITING_TAGS", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
 }

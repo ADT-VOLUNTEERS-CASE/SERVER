@@ -15,7 +15,19 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "event")
+@Table(
+        name = "event",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_event_location_datetime",
+                        columnNames = {"locationId", "dateTimestamp"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_event_cover",
+                        columnNames = {"coverId"}
+                )
+        }
+)
 public class EventEntity {
 
     @Id

@@ -1,5 +1,6 @@
 package org.adt.volunteerscase.repository;
 
+import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -55,5 +56,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
      * @return `true` if a user with the given phone number exists, `false` otherwise
      */
     boolean existsByPhoneNumber(String phoneNumber);
+
+    boolean existsByTagsContaining(TagEntity tag);
 
 }

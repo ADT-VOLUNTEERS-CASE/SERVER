@@ -7,7 +7,9 @@ import org.adt.volunteerscase.dto.tag.response.TagGetResponse;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.exception.TagAlreadyExistsException;
 import org.adt.volunteerscase.exception.TagNotFoundException;
+import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.TagRepository;
+import org.adt.volunteerscase.repository.UserRepository;
 import org.adt.volunteerscase.service.TagService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -31,23 +33,14 @@ public class TagServiceImpl implements TagService {
             return new HashSet<>();
         }
 
-        Set<Integer> cleanedTagIds = tagIds.stream()
-                .filter(id -> id != null && id > 0)
-                .collect(Collectors.toSet());
+        List<TagEntity> foundTags = tagRepository.findAllByTagIdIn(tagIds);
 
-        if (cleanedTagIds.isEmpty()) {
-            return new HashSet<>();
-        }
-
-
-        List<TagEntity> foundTags = tagRepository.findAllByTagIdIn(cleanedTagIds);
-
-        if (foundTags.size() != cleanedTagIds.size()) {
+        if (foundTags.size() != tagIds.size()) {
             Set<Integer> foundTagIds = foundTags.stream()
                     .map(TagEntity::getTagId)
                     .collect(Collectors.toSet());
 
-            Set<Integer> missingTagIds = cleanedTagIds.stream()
+            Set<Integer> missingTagIds = tagIds.stream()
                     .filter(id -> !foundTagIds.contains(id))
                     .collect(Collectors.toSet());
 
@@ -78,11 +71,10 @@ public class TagServiceImpl implements TagService {
     @Transactional
     public void updateTag(TagUpdateRequest request, Integer tagId) {
 
-
         TagEntity tagEntity = tagRepository.findByTagId(tagId)
                 .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
 
-        if (tagRepository.existsByTagName(request.getTagName())) {
+        if (tagRepository.existsByTagNameAndTagIdNot(request.getTagName(), tagId)) {
             throw new TagAlreadyExistsException("tag with name - " + request.getTagName() + " already exists");
         }
 
@@ -95,6 +87,7 @@ public class TagServiceImpl implements TagService {
     public void deleteById(Integer tagId) {
         TagEntity tagEntity = tagRepository.findByTagId(tagId)
                 .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
+        detachTagFromRelations(tagEntity.getTagId());
         tagRepository.delete(tagEntity);
     }
 
@@ -103,10 +96,12 @@ public class TagServiceImpl implements TagService {
     public void deleteByName(String tagName) {
         TagEntity tagEntity = tagRepository.findByTagName(tagName)
                 .orElseThrow(() -> new TagNotFoundException("tag with name - " + tagName + " not found"));
+        detachTagFromRelations(tagEntity.getTagId());
         tagRepository.delete(tagEntity);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TagGetResponse getById(Integer tagId) {
         TagEntity tagEntity = tagRepository.findByTagId(tagId)
                 .orElseThrow(() -> new TagNotFoundException("tag with id - " + tagId + " not found"));
@@ -115,6 +110,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public TagGetResponse getByName(String tagName) {
         TagEntity tagEntity = tagRepository.findByTagName(tagName)
                 .orElseThrow(() -> new TagNotFoundException("tag with name - " + tagName + " not found"));
@@ -127,5 +123,10 @@ public class TagServiceImpl implements TagService {
                 .tagName(tagEntity.getTagName())
                 .tagId(tagEntity.getTagId())
                 .build();
+    }
+
+    private void detachTagFromRelations(Integer tagId) {
+        tagRepository.deleteUserTagLinksByTagId(tagId);
+        tagRepository.deleteEventTagLinksByTagId(tagId);
     }
 }

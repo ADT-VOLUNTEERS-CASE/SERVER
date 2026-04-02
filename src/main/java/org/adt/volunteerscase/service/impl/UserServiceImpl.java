@@ -11,6 +11,7 @@ import org.adt.volunteerscase.exception.UserNotCoordinatorException;
 import org.adt.volunteerscase.exception.UserNotFoundException;
 import org.adt.volunteerscase.repository.UserRepository;
 import org.adt.volunteerscase.service.UserService;
+import org.adt.volunteerscase.service.security.RefreshTokenService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     @Transactional
@@ -90,6 +92,7 @@ public class UserServiceImpl implements UserService {
         if (!userEntity.isCoordinator()) {
             throw new UserNotCoordinatorException("The user with id - " + userId + " that you want to delete is not a coordinator");        }
 
+        refreshTokenService.deleteAllByUser(userEntity);
         userRepository.delete(userEntity);
     }
 
@@ -102,6 +105,7 @@ public class UserServiceImpl implements UserService {
         if (!userEntity.isCoordinator()) {
             throw new UserNotCoordinatorException("The user with email - " + email + " that you want to delete is not a coordinator");        }
 
+        refreshTokenService.deleteAllByUser(userEntity);
         userRepository.delete(userEntity);
     }
 

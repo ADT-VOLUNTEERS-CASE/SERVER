@@ -37,10 +37,10 @@ public class DataLoader implements CommandLineRunner {
     @Value("${ADMIN_PASSWORD}")
     private String adminPassword;
 
-    @Value("${BASE_USER_PASSWORD:password123}")
+    @Value("${BASE_USER_PASSWORD}")
     private String baseUserPassword;
 
-    @Value("${COORDINATOR_PASSWORD:password123}")
+    @Value("${COORDINATOR_PASSWORD}")
     private String coordinatorPassword;
 
     @Override

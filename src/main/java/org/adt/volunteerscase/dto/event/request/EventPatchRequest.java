@@ -1,9 +1,6 @@
 package org.adt.volunteerscase.dto.event.request;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 public class EventPatchRequest {
 
+    @Pattern(regexp = ".*\\S.*", message = "name must not be blank")
     @Size(max = 255, message = "Name max length is 255")
     private String name;
 

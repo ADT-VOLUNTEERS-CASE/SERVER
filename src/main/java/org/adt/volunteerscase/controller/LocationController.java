@@ -98,6 +98,7 @@ public class LocationController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "данные для обновления полей локации, если какое-то поле пустое, оно не будет изменено"
             )
+            @Valid
             LocationPatchRequest request) {
         return ResponseEntity.ok().body(locationService.updateLocation(request, locationId));
     }

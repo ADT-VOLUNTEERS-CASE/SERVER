@@ -29,6 +29,7 @@ public class RefreshTokenService {
      * @param user the user to associate the created refresh token with
      * @return the persisted RefreshTokenEntity containing the token value and expiry timestamp
      */
+    @Transactional
     public RefreshTokenEntity createRefreshToken(UserEntity user) {
         deleteAllByUser(user);
 
@@ -49,6 +50,7 @@ public class RefreshTokenService {
      *
      * @param user the user whose refresh tokens will be deleted
      */
+    @Transactional
     public void deleteAllByUser(UserEntity user) {
         refreshTokenRepository.deleteAllByUser(user);
     }
@@ -59,6 +61,7 @@ public class RefreshTokenService {
      * @param refreshToken the refresh token string to look up
      * @return an Optional containing the matching RefreshTokenEntity if found, or empty if not found
      */
+    @Transactional(readOnly = true)
     Optional<RefreshTokenEntity> findByToken(String refreshToken) {
         return refreshTokenRepository.findByRefreshToken(refreshToken);
     }
@@ -70,6 +73,7 @@ public class RefreshTokenService {
      * @return the provided `refreshToken` when it is not expired
      * @throws RefreshTokenException if the token is expired; the expired token is deleted before the exception is thrown
      */
+    @Transactional
     public RefreshTokenEntity verifyExpiration(RefreshTokenEntity refreshToken) {
         if (refreshToken.getExpiryAt().isBefore(LocalDateTime.now())) {
             refreshTokenRepository.delete(refreshToken);
@@ -87,6 +91,7 @@ public class RefreshTokenService {
      * @return the newly created refresh token for the same user
      * @throws RefreshTokenException if the provided token has expired
      */
+    @Transactional
     public RefreshTokenEntity rotateRefreshToken(RefreshTokenEntity oldToken) {
 
         verifyExpiration(oldToken);
