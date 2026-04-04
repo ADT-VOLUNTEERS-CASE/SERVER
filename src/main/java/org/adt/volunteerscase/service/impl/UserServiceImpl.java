@@ -48,7 +48,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public GetUserResponse updateCoordinatorByEmail(UpdateCoordinatorRequest request, String email) {
         UserEntity userEntity = userRepository.findByEmailAndDeletedAtIsNull(email)
-                .orElseThrow(() -> new UserNotFoundException("user with id - " + email + " not found"));
+                .orElseThrow(() -> new UserNotFoundException("user with email - " + email + " not found"));
 
         return applyCoordinatorUpdate(request, userEntity);
     }
