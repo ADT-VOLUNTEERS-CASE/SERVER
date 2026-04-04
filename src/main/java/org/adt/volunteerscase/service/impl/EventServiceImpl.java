@@ -1,6 +1,7 @@
 package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
 import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
@@ -10,12 +11,14 @@ import org.adt.volunteerscase.dto.event.response.PatchResponse;
 import org.adt.volunteerscase.dto.location.LocationEntityDTO;
 import org.adt.volunteerscase.dto.page.response.PageResponse;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
+import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.event.EventEntity;
 import org.adt.volunteerscase.entity.event.EventStatus;
 import org.adt.volunteerscase.exception.*;
+import org.adt.volunteerscase.repository.CoordinatorRepository;
 import org.adt.volunteerscase.repository.CoverRepository;
 import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.LocationRepository;
@@ -42,6 +45,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final CoverRepository coverRepository;
     private final LocationRepository locationRepository;
+    private final CoordinatorRepository coordinatorRepository;
     private final TagService tagService;
 
     @Override
@@ -68,12 +72,17 @@ public class EventServiceImpl implements EventService {
                 throw new CoverAlreadyExistsException("cover with id - " + request.getCoverId() + " already exists");
             }
         }
+
+        CoordinatorEntity coordinatorEntity = coordinatorRepository.findById(request.getCoordinatorId())
+                .orElseThrow(() -> new CoordinatorNotFoundException(
+                        "coordinator with id - " + request.getCoordinatorId() + " not found"));
+
         EventEntity eventEntity = EventEntity.builder()
                 .name(request.getName())
                 .status(EventStatus.valueOf(request.getStatus()))
                 .description(request.getDescription())
                 .cover(coverEntity)
-                .coordinatorContact(request.getCoordinatorContact())
+                .coordinator(coordinatorEntity)
                 .maxCapacity(request.getMaxCapacity())
                 .dateTimestamp(request.getDateTimestamp())
                 .location(locationEntity)
@@ -103,8 +112,12 @@ public class EventServiceImpl implements EventService {
             event.setDescription(request.getDescription());
         }
 
-        if (request.getCoordinatorContact() != null) {
-            event.setCoordinatorContact(request.getCoordinatorContact());
+        if (request.getCoordinatorId() != null) {
+            CoordinatorEntity coordinatorEntity = coordinatorRepository.findById(request.getCoordinatorId())
+                    .orElseThrow(() -> new CoordinatorNotFoundException(
+                            "coordinator with id - " + request.getCoordinatorId() + " not found"
+                    ));
+            event.setCoordinator(coordinatorEntity);
         }
 
         if (request.getMaxCapacity() != null) {
@@ -171,7 +184,7 @@ public class EventServiceImpl implements EventService {
                 .description(updateEvent.getDescription())
                 .status(updateEvent.getStatus())
                 .coverId(event.getCover() != null ? event.getCover().getCoverId() : null)
-                .coordinatorContact(updateEvent.getCoordinatorContact())
+                .coordinator(convertCoordinatorToDTO(updateEvent.getCoordinator()))
                 .maxCapacity(updateEvent.getMaxCapacity())
                 .dateTimestamp(updateEvent.getDateTimestamp())
                 .locationId(updateEvent.getLocation() != null ? updateEvent.getLocation().getLocationId() : null)
@@ -221,7 +234,7 @@ public class EventServiceImpl implements EventService {
                 .name(event.getName())
                 .description(event.getDescription())
                 .cover(convertCoverToDTO(event.getCover()))
-                .coordinatorContact(event.getCoordinatorContact())
+                .coordinator(convertCoordinatorToDTO(event.getCoordinator()))
                 .maxCapacity(event.getMaxCapacity())
                 .dateTimestamp(event.getDateTimestamp())
                 .location(convertLocationToLocationDTO(event.getLocation()))
@@ -271,6 +284,19 @@ public class EventServiceImpl implements EventService {
                 .height(cover.getHeight())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    private CoordinatorEntityDTO convertCoordinatorToDTO(CoordinatorEntity coordinator) {
+        if (coordinator == null) {
+            return null;
+        }
+
+        return CoordinatorEntityDTO.builder()
+                .userId(coordinator.getUserId())
+                .workLocation(coordinator.getWorkLocation())
+                .build();
+    }
+
 
     private RuntimeException mapEventConstraintException(
             DataIntegrityViolationException ex,

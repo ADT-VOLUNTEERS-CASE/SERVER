@@ -140,4 +140,12 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse("SIMULTANEOUSLY_CLEANING_AND_WRITING_TAGS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+
+    @ExceptionHandler(CoordinatorNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCoordinatorNotFoundException(CoordinatorNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("COORDINATOR_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
 }

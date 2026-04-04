@@ -4,11 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
+import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.user.UserEntity;
+import org.adt.volunteerscase.exception.CoordinatorNotFoundException;
 import org.adt.volunteerscase.exception.UserAlreadyExistsException;
 import org.adt.volunteerscase.exception.UserNotCoordinatorException;
 import org.adt.volunteerscase.exception.UserNotFoundException;
+import org.adt.volunteerscase.repository.CoordinatorRepository;
 import org.adt.volunteerscase.repository.UserRepository;
 import org.adt.volunteerscase.service.UserService;
 import org.adt.volunteerscase.service.security.RefreshTokenService;
@@ -25,6 +28,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RefreshTokenService refreshTokenService;
+    private final CoordinatorRepository coordinatorRepository;
 
     @Override
     @Transactional
@@ -49,6 +53,13 @@ public class UserServiceImpl implements UserService {
         if (!userEntity.isCoordinator()) {
             throw new UserNotCoordinatorException("The user that you want to change is not a coordinator");
         }
+
+        CoordinatorEntity coordinatorEntity = coordinatorRepository.findById(userEntity.getUserId())
+                .orElseThrow(() -> new CoordinatorNotFoundException(
+                        "coordinator with user id - " + userEntity.getUserId() + " not found"
+                ));
+
+
         if (request.getFirstname() != null) {
             userEntity.setFirstname(request.getFirstname());
         }
@@ -77,9 +88,15 @@ public class UserServiceImpl implements UserService {
             userEntity.setPhoneNumber(request.getPhoneNumber());
         }
 
-        userRepository.save(userEntity);
+        if (request.getWorkLocation() != null) {
+            coordinatorEntity.setWorkLocation(request.getWorkLocation());
+        }
 
-        return convertToResponse(userEntity);
+
+        userRepository.save(userEntity);
+        coordinatorRepository.save(coordinatorEntity);
+
+        return convertToResponse(userEntity, coordinatorEntity);
     }
 
     @Override
@@ -90,10 +107,18 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("user with id - " + userId + " not found"));
 
         if (!userEntity.isCoordinator()) {
-            throw new UserNotCoordinatorException("The user with id - " + userId + " that you want to delete is not a coordinator");        }
+            throw new UserNotCoordinatorException("The user with id - " + userId + " that you want to delete is not a coordinator");
+        }
+
+        CoordinatorEntity coordinatorEntity = coordinatorRepository.findById(userEntity.getUserId())
+                .orElseThrow(() -> new CoordinatorNotFoundException(
+                        "coordinator with user id - " + userEntity.getUserId() + " not found"
+                ));
 
         refreshTokenService.deleteAllByUser(userEntity);
+        coordinatorRepository.delete(coordinatorEntity);
         userRepository.delete(userEntity);
+
     }
 
     @Override
@@ -103,21 +128,38 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UserNotFoundException("user with email - " + email + " not found"));
 
         if (!userEntity.isCoordinator()) {
-            throw new UserNotCoordinatorException("The user with email - " + email + " that you want to delete is not a coordinator");        }
+            throw new UserNotCoordinatorException("The user with email - " + email + " that you want to delete is not a coordinator");
+        }
+
+        CoordinatorEntity coordinatorEntity = coordinatorRepository.findById(userEntity.getUserId())
+                .orElseThrow(() -> new CoordinatorNotFoundException(
+                        "coordinator with user id - " + userEntity.getUserId() + " not found"
+                ));
 
         refreshTokenService.deleteAllByUser(userEntity);
+        coordinatorRepository.delete(coordinatorEntity);
         userRepository.delete(userEntity);
     }
+
 
     @Override
     @Transactional(readOnly = true)
     public GetUserResponse getCurrentUser(UserEntity currentUser) {
         UserEntity freshUser = userRepository.findById(currentUser.getUserId())
                 .orElseThrow(() -> new UserNotFoundException("user with id - " + currentUser.getUserId() + " not found"));
-        return convertToResponse(freshUser);
+
+        CoordinatorEntity coordinatorEntity = null;
+        if (freshUser.isCoordinator()) {
+            coordinatorEntity = coordinatorRepository.findById(freshUser.getUserId())
+                    .orElseThrow(() -> new CoordinatorNotFoundException(
+                            "coordinator with user id - " + freshUser.getUserId() + " not found"
+                    ));
+        }
+
+        return convertToResponse(freshUser, coordinatorEntity);
     }
 
-    private GetUserResponse convertToResponse(UserEntity userEntity) {
+    private GetUserResponse convertToResponse(UserEntity userEntity, CoordinatorEntity coordinatorEntity) {
         return GetUserResponse.builder()
                 .id(userEntity.getUserId())
                 .email(userEntity.getEmail())
@@ -127,6 +169,7 @@ public class UserServiceImpl implements UserService {
                 .firstname(userEntity.getFirstname())
                 .lastname(userEntity.getLastname())
                 .patronymic(userEntity.getPatronymic())
+                .workLocation(coordinatorEntity != null ? coordinatorEntity.getWorkLocation() : null)
                 .tags(convertTagsToTagsDTO(userEntity.getTags()))
                 .build();
     }

@@ -6,6 +6,7 @@ import org.adt.volunteerscase.dto.auth.AuthenticationRequest;
 import org.adt.volunteerscase.dto.auth.AuthenticationResponse;
 import org.adt.volunteerscase.dto.auth.RegisterRequest;
 import org.adt.volunteerscase.dto.auth.TokenRefreshRequest;
+import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.RefreshTokenEntity;
 import org.adt.volunteerscase.entity.user.UserAuthEntity;
 import org.adt.volunteerscase.entity.user.UserDetailsImpl;
@@ -14,6 +15,7 @@ import org.adt.volunteerscase.exception.InvalidPasswordException;
 import org.adt.volunteerscase.exception.RefreshTokenException;
 import org.adt.volunteerscase.exception.UserAlreadyExistsException;
 import org.adt.volunteerscase.exception.UserNotFoundException;
+import org.adt.volunteerscase.repository.CoordinatorRepository;
 import org.adt.volunteerscase.repository.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,6 +31,7 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final CoordinatorRepository coordinatorRepository;
 
     private final AuthenticationManager authenticationManager;
 
@@ -104,6 +107,13 @@ public class AuthenticationService {
 
         userAuth.setUser(user);
         userRepository.save(user);
+
+        CoordinatorEntity coordinatorEntity = CoordinatorEntity.builder()
+                .user(user)
+                .workLocation(null)
+                .build();
+
+        coordinatorRepository.save(coordinatorEntity);
 
         var accessToken = jwtService.generateAccessToken(new UserDetailsImpl(user, userAuth));
 

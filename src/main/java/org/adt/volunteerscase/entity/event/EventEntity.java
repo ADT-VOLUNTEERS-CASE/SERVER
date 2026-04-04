@@ -3,6 +3,7 @@ package org.adt.volunteerscase.entity.event;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
@@ -51,12 +52,6 @@ public class EventEntity {
     @JoinColumn(name = "coverId")
     private CoverEntity cover;                                          //ссылка на cover, связь один к одному
 
-    @Pattern(regexp = "^(\\+[1-9]\\d{1,14}$|^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$)",
-            message = "Coordinator contact must be valid email or E.164 phone")
-    @Column(name = "coordinatorContact")
-    private String coordinatorContact;                                  //Email/телефон координатора, есть проверка на формат Email или формат номера телефона
-
-
     @NotNull(message = "maxCapacity is blank")
     @Min(value = 1, message = "Max capacity must be greater than 0")
     @Column(name = "maxCapacity", nullable = false)
@@ -82,4 +77,9 @@ public class EventEntity {
             )
     )
     private Set<TagEntity> tags;                                              //тег, связь многие ко многим
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coordinatorId", nullable = false)
+    private CoordinatorEntity coordinator;
+
 }
