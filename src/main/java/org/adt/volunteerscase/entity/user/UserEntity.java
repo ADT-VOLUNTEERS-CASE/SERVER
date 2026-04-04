@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.adt.volunteerscase.entity.TagEntity;
+import org.adt.volunteerscase.entity.UserEventEntity;
 
 import java.util.Set;
 
@@ -78,4 +79,7 @@ public class UserEntity{
             )
     )
     private Set<TagEntity> tags;                                     //тег, связь многие ко многим
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<UserEventEntity> userEvents;
 }

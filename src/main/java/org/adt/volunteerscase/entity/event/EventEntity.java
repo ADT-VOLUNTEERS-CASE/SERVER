@@ -3,10 +3,7 @@ package org.adt.volunteerscase.entity.event;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.adt.volunteerscase.entity.CoordinatorEntity;
-import org.adt.volunteerscase.entity.CoverEntity;
-import org.adt.volunteerscase.entity.LocationEntity;
-import org.adt.volunteerscase.entity.TagEntity;
+import org.adt.volunteerscase.entity.*;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -81,5 +78,8 @@ public class EventEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coordinatorId", nullable = false)
     private CoordinatorEntity coordinator;
+
+    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
+    private Set<UserEventEntity> userEvents;
 
 }
