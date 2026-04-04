@@ -7,6 +7,7 @@ import org.adt.volunteerscase.entity.user.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -15,5 +16,12 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
     Optional<UserEventEntity> findByUserAndEvent(UserEntity user, EventEntity event);
 
     boolean existsByUserAndEvent(UserEntity user, EventEntity event);
+
+    List<UserEventEntity> findAllByUserAndDeletedAtIsNull(UserEntity user);
+
+    Optional<UserEventEntity> findByUserAndEventAndDeletedAtIsNull(UserEntity user, EventEntity event);
+
+    boolean existsByUserAndEventAndDeletedAtIsNull(UserEntity user, EventEntity event);
+
 }
 

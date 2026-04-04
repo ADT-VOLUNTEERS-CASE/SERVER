@@ -200,9 +200,10 @@ public class AuthenticationService {
     @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
         String email = request.getEmail();
-        if (!userRepository.existsByEmail(email)) {
-            throw new UserNotFoundException("User with email " + email + " not found");
-        }
+
+        UserEntity user = userRepository.findActiveByEmailWithAuth(email)
+                .orElseThrow(() -> new UserNotFoundException("User with email " + email + " not found"));
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -210,7 +211,8 @@ public class AuthenticationService {
                             request.getPassword()
                     )
             );
-            var user = userRepository.findByEmailWithAuth(request.getEmail()).orElseThrow();
+
+            //var user = userRepository.findByEmailWithAuth(request.getEmail()).orElseThrow();
 
             var jwtToken = jwtService.generateAccessToken(new UserDetailsImpl(user, user.getUserAuth()));
 
