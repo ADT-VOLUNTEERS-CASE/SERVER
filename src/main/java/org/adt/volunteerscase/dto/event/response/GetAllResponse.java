@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
 import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
 import org.adt.volunteerscase.dto.location.LocationEntityDTO;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
@@ -23,7 +24,7 @@ public class GetAllResponse {
     private String name;
     private String description;
     private CoverEntityDTO cover;
-    private String coordinatorContact;
+    private CoordinatorEntityDTO coordinator;
     private Integer maxCapacity;
     private LocalDateTime dateTimestamp;
     private LocationEntityDTO location;

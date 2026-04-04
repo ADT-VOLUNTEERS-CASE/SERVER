@@ -1,6 +1,7 @@
 package org.adt.volunteerscase.config;
 
 import lombok.RequiredArgsConstructor;
+import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
@@ -33,6 +34,8 @@ public class DataLoader implements CommandLineRunner {
     private final CoverRepository coverRepository;
     private final TagRepository tagRepository;
     private final EventRepository eventRepository;
+    private final CoordinatorRepository coordinatorRepository;
+
 
     @Value("${ADMIN_PASSWORD}")
     private String adminPassword;
@@ -53,9 +56,14 @@ public class DataLoader implements CommandLineRunner {
 
 
         //creating users
-        UserEntity admin = createUser("adminFirstname", "adminLastname", "adminPatronymic", "admin@example.com", "+67676767671", false, true, adminPassword);
-        UserEntity user = createUser("userFirstname", "userLastname", "userPatronymic", "user@example.com", "+79999999999", false, false, baseUserPassword);
-        UserEntity coordinator = createUser("coordinatorFirstname", "coordinatorLastname", "coordinatorPatronymic", "coordinator@example.com", "+8888888888", true, false, coordinatorPassword);
+        UserEntity admin = createUser("adminFirstname", "adminLastname", "adminPatronymic", "admin@example.com", "+67676767671", false, true,
+                adminPassword);
+        UserEntity user = createUser("userFirstname", "userLastname", "userPatronymic", "user@example.com", "+79999999999", false, false,
+                baseUserPassword);
+        UserEntity coordinatorUser = createUser("coordinatorFirstname", "coordinatorLastname", "coordinatorPatronymic", "coordinator@example.com",
+                "+8888888888", true, false, coordinatorPassword);
+
+        CoordinatorEntity coordinator = createCoordinatorProfile(coordinatorUser, "Main office");
 
         //creating locations
         LocationEntity firstLocation = createLocation("Театральная площадь, Москва", "театральная площадь в Москве", 55.7589, 37.6185);
@@ -85,16 +93,16 @@ public class DataLoader implements CommandLineRunner {
         userTags.add(userTag3);
 
         Set<TagEntity> coordinatorTags = new HashSet<>();
-        TagEntity coordinatorTag1 = createTag("coordinatorTag1", coordinator);
+        TagEntity coordinatorTag1 = createTag("coordinatorTag1", coordinatorUser);
         coordinatorTags.add(coordinatorTag1);
-        TagEntity coordinatorTag2 = createTag("coordinatorTag2", coordinator);
+        TagEntity coordinatorTag2 = createTag("coordinatorTag2", coordinatorUser);
         coordinatorTags.add(coordinatorTag2);
-        TagEntity coordinatorTag3 = createTag("coordinatorTag3", coordinator);
+        TagEntity coordinatorTag3 = createTag("coordinatorTag3", coordinatorUser);
         coordinatorTags.add(coordinatorTag3);
 
         setTagsToUser(adminTags, admin);
         setTagsToUser(userTags, user);
-        setTagsToUser(coordinatorTags, coordinator);
+        setTagsToUser(coordinatorTags, coordinatorUser);
 
         Set<TagEntity> firstEventTags = new HashSet<>();
         firstEventTags.add(adminTag1);
@@ -120,57 +128,104 @@ public class DataLoader implements CommandLineRunner {
                 "first event",
                 "first event, completed",
                 firstCover,
-                "+67676767671",
+                coordinator,
                 100,
                 LocalDateTime.of(2025, 2, 19, 12, 0),
                 firstLocation,
                 firstEventTags
         );
-        EventEntity secondEvent = createEvent(
+        createEvent(
                 EventStatus.COMPLETED,
                 "second event",
                 "second event, completed",
                 secondCover,
-                "coordinator@example.com",
+                coordinator,
                 67,
                 LocalDateTime.of(2025, 2, 18, 12, 0),
                 secondLocation,
                 secondEventTags
         );
+
 //        EventEntity thirdEvent = createEvent();
     }
 
-    private UserEntity createUser(String firstname, String lastname, String patronymic, String email, String phoneNumber, boolean isCoordinator, boolean isAdmin, String password) {
+    private UserEntity createUser(
+            String firstname,
+            String lastname,
+            String patronymic,
+            String email,
+            String phoneNumber,
+            boolean isCoordinator,
+            boolean isAdmin,
+            String password
+    ) {
+        UserEntity userByEmail = userRepository.findByEmail(email).orElse(null);
+        UserEntity userByPhone = userRepository.findByPhoneNumber(phoneNumber).orElse(null);
 
-        if (userRepository.existsByEmail(email)) {
-            return userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UserNotFoundException("user with email - " + email + " not found"));
+        if (userByEmail != null && userByPhone != null
+                && !userByEmail.getUserId().equals(userByPhone.getUserId())) {
+            throw new UserAlreadyExistsException(
+                    "email " + email + " and phone number " + phoneNumber + " belong to different users"
+            );
         }
 
-        if (userRepository.existsByPhoneNumber(phoneNumber)) {
-            return userRepository.findByPhoneNumber(phoneNumber)
-                    .orElseThrow(() -> new UserNotFoundException("user with phone number - " + phoneNumber + " not found"));
+        UserEntity user = userByEmail != null ? userByEmail : userByPhone;
+
+        if (user != null) {
+            if (!user.getEmail().equals(email) || !user.getPhoneNumber().equals(phoneNumber)) {
+                throw new UserAlreadyExistsException(
+                        "existing user data does not match requested seed user: email=" + email + ", phoneNumber=" + phoneNumber
+                );
+            }
+
+            if (isCoordinator && !user.isCoordinator()) {
+                throw new UserNotCoordinatorException(
+                        "user with id - " + user.getUserId() + " exists but is not marked as coordinator"
+                );
+            }
+
+            return user;
         }
+
         UserAuthEntity userAuth = UserAuthEntity.builder()
                 .passwordHash(passwordEncoder.encode(password))
                 .build();
 
-        UserEntity user = UserEntity.builder()
+        UserEntity newUser = UserEntity.builder()
                 .firstname(firstname)
                 .lastname(lastname)
                 .patronymic(patronymic)
                 .email(email)
                 .phoneNumber(phoneNumber)
                 .isAdmin(isAdmin)
+                .isCoordinator(isCoordinator)
                 .userAuth(userAuth)
-                .isCoordinator(isCoordinator).build();
+                .build();
 
+        userAuth.setUser(newUser);
+        userRepository.save(newUser);
+        refreshTokenService.createRefreshToken(newUser);
 
-        userAuth.setUser(user);
-        userRepository.save(user);
-        refreshTokenService.createRefreshToken(user);
-        return user;
+        return newUser;
     }
+
+
+    private CoordinatorEntity createCoordinatorProfile(UserEntity user, String workLocation) {
+        if (!user.isCoordinator()) {
+            throw new UserNotCoordinatorException(
+                    "user with id - " + user.getUserId() + " is not coordinator"
+            );
+        }
+
+        return coordinatorRepository.findById(user.getUserId())
+                .orElseGet(() -> coordinatorRepository.save(
+                        CoordinatorEntity.builder()
+                                .user(user)
+                                .workLocation(workLocation)
+                                .build()
+                ));
+    }
+
 
     private LocationEntity createLocation(String address, String additionalNotes, Double latitude, Double longitude) {
         if (!locationRepository.existsByAddress(address)) {
@@ -221,8 +276,17 @@ public class DataLoader implements CommandLineRunner {
         userRepository.save(currentUser);
     }
 
-    private EventEntity createEvent(EventStatus status, String name, String description, CoverEntity cover, String coordinatorContact, Integer maxCapacity, LocalDateTime dateTimestamp, LocationEntity location, Set<TagEntity> tags) {
-
+    private EventEntity createEvent(
+            EventStatus status,
+            String name,
+            String description,
+            CoverEntity cover,
+            CoordinatorEntity coordinator,
+            Integer maxCapacity,
+            LocalDateTime dateTimestamp,
+            LocationEntity location,
+            Set<TagEntity> tags
+    ) {
         if (eventRepository.existsByName(name)) {
             return eventRepository.findByName(name)
                     .orElseThrow(() -> new EventNotFoundException("event with name - " + name + " not found"));
@@ -233,7 +297,7 @@ public class DataLoader implements CommandLineRunner {
                 .name(name)
                 .description(description)
                 .cover(cover)
-                .coordinatorContact(coordinatorContact)
+                .coordinator(coordinator)
                 .maxCapacity(maxCapacity)
                 .dateTimestamp(dateTimestamp)
                 .location(location)
@@ -242,4 +306,5 @@ public class DataLoader implements CommandLineRunner {
 
         return eventRepository.save(event);
     }
+
 }

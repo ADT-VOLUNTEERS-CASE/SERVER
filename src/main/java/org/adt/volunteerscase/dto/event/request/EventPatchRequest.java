@@ -27,9 +27,8 @@ public class EventPatchRequest {
             message = "Status must be one of: ONGOING, IN_PROGRESS, COMPLETED")
     private String eventStatus;
 
-    @Pattern(regexp = "^(\\+[1-9]\\d{1,14}$|^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$)",
-            message = "Coordinator contact must be valid email or E.164 phone")
-    private String coordinatorContact;
+    @Positive(message = "coordinator id must be positive")
+    private Integer coordinatorId;
 
     @Min(value = 1, message = "Max capacity must be greater than 0")
     private Integer maxCapacity;

@@ -32,7 +32,7 @@ public class AppConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            UserEntity user = repository.findByEmailWithAuth(username)
+            UserEntity user = repository.findActiveByEmailWithAuth(username)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
             if (user.getUserAuth() == null) {

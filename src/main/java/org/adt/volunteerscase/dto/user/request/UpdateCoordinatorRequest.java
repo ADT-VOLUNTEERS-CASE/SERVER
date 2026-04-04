@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateCoordinatorRequest {
 
-
     @Size(min = 1, max = 100, message = "First name min length is 1, max length is 100")
     private String firstname;
 
@@ -32,4 +31,6 @@ public class UpdateCoordinatorRequest {
     @Email(message = "incorrect email format")
     private String email;
 
+    @Size(max = 255, message = "Work location max length is 255")
+    private String workLocation;
 }

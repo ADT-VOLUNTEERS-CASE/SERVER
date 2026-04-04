@@ -83,43 +83,43 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(EventNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleEventNotFoundException(EventNotFoundException ex){
+    public ResponseEntity<ErrorResponse> handleEventNotFoundException(EventNotFoundException ex) {
         ErrorResponse errorResponse = new ErrorResponse("EVENT_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(CoverNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCoverNotFoundException(CoverNotFoundException ex){
+    public ResponseEntity<ErrorResponse> handleCoverNotFoundException(CoverNotFoundException ex) {
         ErrorResponse errorResponse = new ErrorResponse("COVER_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(TagNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleTagNotFoundException(TagNotFoundException ex){
+    public ResponseEntity<ErrorResponse> handleTagNotFoundException(TagNotFoundException ex) {
         ErrorResponse errorResponse = new ErrorResponse("TAG_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(TagAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleTagAlreadyExistsException(TagAlreadyExistsException ex){
+    public ResponseEntity<ErrorResponse> handleTagAlreadyExistsException(TagAlreadyExistsException ex) {
         ErrorResponse errorResponse = new ErrorResponse("TAG_NAME_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(LocationAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleLocationAlreadyExistsException(LocationAlreadyExistsException ex){
+    public ResponseEntity<ErrorResponse> handleLocationAlreadyExistsException(LocationAlreadyExistsException ex) {
         ErrorResponse errorResponse = new ErrorResponse("LOCATION_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(CoverAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleCoverAlreadyExistsException(CoverAlreadyExistsException ex){
+    public ResponseEntity<ErrorResponse> handleCoverAlreadyExistsException(CoverAlreadyExistsException ex) {
         ErrorResponse errorResponse = new ErrorResponse("COVER_ALREADY_EXISTS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
     }
 
     @ExceptionHandler(LocationNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleLocationNotFoundException(LocationNotFoundException ex){
+    public ResponseEntity<ErrorResponse> handleLocationNotFoundException(LocationNotFoundException ex) {
         ErrorResponse errorResponse = new ErrorResponse("LOCATION_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
@@ -148,4 +148,18 @@ public class GlobalExceptionHandler {
         ErrorResponse errorResponse = new ErrorResponse("SIMULTANEOUSLY_CLEANING_AND_WRITING_TAGS", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
+
+
+    @ExceptionHandler(CoordinatorNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCoordinatorNotFoundException(CoordinatorNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("COORDINATOR_NOT_FOUND", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(CoordinatorInUseException.class)
+    public ResponseEntity<ErrorResponse> handleCoordinatorInUseException(CoordinatorInUseException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("COORDINATOR_IN_USE", ex.getMessage(), LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
 }

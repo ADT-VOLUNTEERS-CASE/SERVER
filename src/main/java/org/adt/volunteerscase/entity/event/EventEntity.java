@@ -3,17 +3,17 @@ package org.adt.volunteerscase.entity.event;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
-import org.adt.volunteerscase.entity.CoverEntity;
-import org.adt.volunteerscase.entity.LocationEntity;
-import org.adt.volunteerscase.entity.TagEntity;
+import org.adt.volunteerscase.entity.*;
 
 import java.time.LocalDateTime;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(
         name = "event",
@@ -33,29 +33,25 @@ public class EventEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "eventId")
+    @ToString.Include
     private Integer eventId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EventStatus status;
 
+    @ToString.Include
     @NotBlank(message = "name is null")
     @Column(nullable = false)
     private String name;
 
-
     @Column(length = 5000)
     private String description;
 
+    @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coverId")
     private CoverEntity cover;                                          //ссылка на cover, связь один к одному
-
-    @Pattern(regexp = "^(\\+[1-9]\\d{1,14}$|^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$)",
-            message = "Coordinator contact must be valid email or E.164 phone")
-    @Column(name = "coordinatorContact")
-    private String coordinatorContact;                                  //Email/телефон координатора, есть проверка на формат Email или формат номера телефона
-
 
     @NotNull(message = "maxCapacity is blank")
     @Min(value = 1, message = "Max capacity must be greater than 0")
@@ -65,12 +61,15 @@ public class EventEntity {
 
     @NotNull(message = "data is null")
     @Column(name = "dateTimestamp", nullable = false)
+    @ToString.Include
     private LocalDateTime dateTimestamp;                                //дата
 
+    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "locationId", nullable = false)
     private LocationEntity location;                                    //локация, связь многие к одному
 
+    @ToString.Exclude
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "event_tags",
@@ -82,4 +81,14 @@ public class EventEntity {
             )
     )
     private Set<TagEntity> tags;                                              //тег, связь многие ко многим
+
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coordinatorId", nullable = false)
+    private CoordinatorEntity coordinator;
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "event", fetch = FetchType.LAZY)
+    private Set<UserEventEntity> userEvents;
+
 }

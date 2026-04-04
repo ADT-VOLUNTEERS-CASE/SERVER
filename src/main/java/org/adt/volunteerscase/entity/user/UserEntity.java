@@ -2,18 +2,19 @@ package org.adt.volunteerscase.entity.user;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.adt.volunteerscase.entity.TagEntity;
+import org.adt.volunteerscase.entity.UserEventEntity;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "users",
         uniqueConstraints = {
@@ -28,17 +29,20 @@ public class UserEntity{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @ToString.Include
     @Column(name = "userId")
     private Integer userId;
 
     @NotBlank(message = "Firstname is null")
     @Size(max = 100, message = "First name max length is 100")
     @Column(name = "firstname", length = 100, nullable = false)
+    @ToString.Include
     private String firstname;                                   //имя, длина <= 100, не null,
 
     @NotBlank(message = "Lastname is null")
     @Size(max = 100, message = "Last name max length is 100")
     @Column(name = "lastname", length = 100, nullable = false)
+    @ToString.Include
     private String lastname;                                    //фамилия, длина <= 100, не null
 
     @Size(max = 100, message = "Patronymic max length is 100")
@@ -64,9 +68,11 @@ public class UserEntity{
     @Builder.Default
     private boolean isCoordinator = false;
 
+    @ToString.Exclude
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private UserAuthEntity userAuth;                            //связь один к одному с таблицей user_auth, при удалении записи в users удалиться соответствующий user_auth
 
+    @ToString.Exclude
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "user_tags",
@@ -78,4 +84,24 @@ public class UserEntity{
             )
     )
     private Set<TagEntity> tags;                                     //тег, связь многие ко многим
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<UserEventEntity> userEvents;
+
+    @Column(name = "createdAt")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updatedAt")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "deletedAt")
+    private LocalDateTime deletedAt;
+
+    @PrePersist
+    private void onCreate() {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+    }
 }
