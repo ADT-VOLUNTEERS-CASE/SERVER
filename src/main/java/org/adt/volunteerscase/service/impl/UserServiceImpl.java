@@ -7,11 +7,9 @@ import org.adt.volunteerscase.dto.user.response.GetUserResponse;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.user.UserEntity;
-import org.adt.volunteerscase.exception.CoordinatorNotFoundException;
-import org.adt.volunteerscase.exception.UserAlreadyExistsException;
-import org.adt.volunteerscase.exception.UserNotCoordinatorException;
-import org.adt.volunteerscase.exception.UserNotFoundException;
+import org.adt.volunteerscase.exception.*;
 import org.adt.volunteerscase.repository.CoordinatorRepository;
+import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.UserRepository;
 import org.adt.volunteerscase.service.UserService;
 import org.adt.volunteerscase.service.security.RefreshTokenService;
@@ -29,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RefreshTokenService refreshTokenService;
     private final CoordinatorRepository coordinatorRepository;
+    private final EventRepository eventRepository;
 
     @Override
     @Transactional
@@ -115,6 +114,12 @@ public class UserServiceImpl implements UserService {
                         "coordinator with user id - " + userEntity.getUserId() + " not found"
                 ));
 
+        if (eventRepository.existsByCoordinator(coordinatorEntity)) {
+            throw new CoordinatorInUseException(
+                    "coordinator with user id - " + userEntity.getUserId() + " is assigned to one or more events"
+            );
+        }
+
         refreshTokenService.deleteAllByUser(userEntity);
         coordinatorRepository.delete(coordinatorEntity);
         userRepository.delete(userEntity);
@@ -135,6 +140,12 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new CoordinatorNotFoundException(
                         "coordinator with user id - " + userEntity.getUserId() + " not found"
                 ));
+
+        if (eventRepository.existsByCoordinator(coordinatorEntity)) {
+            throw new CoordinatorInUseException(
+                    "coordinator with user id - " + userEntity.getUserId() + " is assigned to one or more events"
+            );
+        }
 
         refreshTokenService.deleteAllByUser(userEntity);
         coordinatorRepository.delete(coordinatorEntity);

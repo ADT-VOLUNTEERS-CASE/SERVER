@@ -159,37 +159,56 @@ public class DataLoader implements CommandLineRunner {
             boolean isAdmin,
             String password
     ) {
-        UserEntity user;
+        UserEntity userByEmail = userRepository.findByEmail(email).orElse(null);
+        UserEntity userByPhone = userRepository.findByPhoneNumber(phoneNumber).orElse(null);
 
-        if (userRepository.existsByEmail(email)) {
-            user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UserNotFoundException("user with email - " + email + " not found"));
-        } else if (userRepository.existsByPhoneNumber(phoneNumber)) {
-            user = userRepository.findByPhoneNumber(phoneNumber)
-                    .orElseThrow(() -> new UserNotFoundException("user with phone number - " + phoneNumber + " not found"));
-        } else {
-            UserAuthEntity userAuth = UserAuthEntity.builder()
-                    .passwordHash(passwordEncoder.encode(password))
-                    .build();
-
-            user = UserEntity.builder()
-                    .firstname(firstname)
-                    .lastname(lastname)
-                    .patronymic(patronymic)
-                    .email(email)
-                    .phoneNumber(phoneNumber)
-                    .isAdmin(isAdmin)
-                    .isCoordinator(isCoordinator)
-                    .userAuth(userAuth)
-                    .build();
-
-            userAuth.setUser(user);
-            userRepository.save(user);
-            refreshTokenService.createRefreshToken(user);
+        if (userByEmail != null && userByPhone != null
+                && !userByEmail.getUserId().equals(userByPhone.getUserId())) {
+            throw new UserAlreadyExistsException(
+                    "email " + email + " and phone number " + phoneNumber + " belong to different users"
+            );
         }
 
-        return user;
+        UserEntity user = userByEmail != null ? userByEmail : userByPhone;
+
+        if (user != null) {
+            if (!user.getEmail().equals(email) || !user.getPhoneNumber().equals(phoneNumber)) {
+                throw new UserAlreadyExistsException(
+                        "existing user data does not match requested seed user: email=" + email + ", phoneNumber=" + phoneNumber
+                );
+            }
+
+            if (isCoordinator && !user.isCoordinator()) {
+                throw new UserNotCoordinatorException(
+                        "user with id - " + user.getUserId() + " exists but is not marked as coordinator"
+                );
+            }
+
+            return user;
+        }
+
+        UserAuthEntity userAuth = UserAuthEntity.builder()
+                .passwordHash(passwordEncoder.encode(password))
+                .build();
+
+        UserEntity newUser = UserEntity.builder()
+                .firstname(firstname)
+                .lastname(lastname)
+                .patronymic(patronymic)
+                .email(email)
+                .phoneNumber(phoneNumber)
+                .isAdmin(isAdmin)
+                .isCoordinator(isCoordinator)
+                .userAuth(userAuth)
+                .build();
+
+        userAuth.setUser(newUser);
+        userRepository.save(newUser);
+        refreshTokenService.createRefreshToken(newUser);
+
+        return newUser;
     }
+
 
     private CoordinatorEntity createCoordinatorProfile(UserEntity user, String workLocation) {
         if (!user.isCoordinator()) {

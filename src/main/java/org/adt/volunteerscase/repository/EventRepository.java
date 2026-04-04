@@ -1,5 +1,6 @@
 package org.adt.volunteerscase.repository;
 
+import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
@@ -29,5 +30,7 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
     boolean existsByDateTimestamp(LocalDateTime dateTimestamp);
     boolean existsByLocationAndDateTimestamp(LocationEntity location, LocalDateTime dateTimestamp);
     boolean existsByLocationAndDateTimestampAndEventIdNot(LocationEntity location, LocalDateTime dateTimestamp, Integer eventId);
+    boolean existsByCoordinator(CoordinatorEntity coordinator);
+
     Page<EventEntity> findAllByOrderByDateTimestampDesc(Pageable pageable);
 }
