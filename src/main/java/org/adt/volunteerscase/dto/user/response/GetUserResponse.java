@@ -29,4 +29,7 @@ public class GetUserResponse {
     private boolean isCoordinator;
 
     private Set<TagEntityDTO> tags;
+
+    private String workLocation;
+
 }

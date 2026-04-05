@@ -1,33 +1,107 @@
 package org.adt.volunteerscase.repository;
 
+import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.event.EventEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import javax.xml.stream.Location;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface EventRepository extends JpaRepository<EventEntity, Integer> {
 
     Optional<EventEntity> findByEventId(Integer eventId);
+
     Optional<EventEntity> findByName(String name);
 
+    Optional<EventEntity> findByCover(CoverEntity coverEntity);
 
     boolean existsByLocation(LocationEntity locationEntity);
+
     boolean existsByCover(CoverEntity coverEntity);
+
     boolean existsByName(String name);
+
     boolean existsByLocationAndEventIdNot(LocationEntity location, Integer eventId);
+
     boolean existsByCoverAndEventIdNot(CoverEntity cover, Integer eventId);
+
     boolean existsByTagsContaining(TagEntity tag);
+
     boolean existsByDateTimestamp(LocalDateTime dateTimestamp);
+
     boolean existsByLocationAndDateTimestamp(LocationEntity location, LocalDateTime dateTimestamp);
+
     boolean existsByLocationAndDateTimestampAndEventIdNot(LocationEntity location, LocalDateTime dateTimestamp, Integer eventId);
+
+    boolean existsByCoordinator(CoordinatorEntity coordinator);
+
     Page<EventEntity> findAllByOrderByDateTimestampDesc(Pageable pageable);
+
+    @Query(
+            value = """
+                    SELECT e.event_id
+                    FROM event e
+                    LEFT JOIN event_tags et
+                        ON et.event_id = e.event_id
+                    LEFT JOIN user_tags ut
+                        ON ut.tag_id = et.tag_id
+                       AND ut.user_id = :userId
+                    LEFT JOIN user_events ue_popularity
+                        ON ue_popularity.event_id = e.event_id
+                       AND ue_popularity.revoked = FALSE
+                       AND ue_popularity.deleted_at IS NULL
+                    WHERE e.status <> 'COMPLETED'
+                      AND e.date_timestamp > :now
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM user_events ue_self
+                          WHERE ue_self.event_id = e.event_id
+                            AND ue_self.user_id = :userId
+                            AND ue_self.deleted_at IS NULL
+                      )
+                    GROUP BY e.event_id, e.date_timestamp
+                    ORDER BY COUNT(DISTINCT ut.tag_id) DESC,
+                             COUNT(DISTINCT ue_popularity.user_id) DESC,
+                             e.date_timestamp DESC,
+                             e.event_id DESC
+                    """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM event e
+                    WHERE e.status <> 'COMPLETED'
+                      AND e.date_timestamp > :now
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM user_events ue_self
+                          WHERE ue_self.event_id = e.event_id
+                            AND ue_self.user_id = :userId
+                            AND ue_self.deleted_at IS NULL
+                      )
+                    """,
+            nativeQuery = true
+    )
+    Page<Integer> findRecommendedEventIds(
+            @Param("userId") Integer userId,
+            @Param("now") LocalDateTime now,
+            Pageable pageable
+    );
+
+    @EntityGraph(attributePaths = {"cover", "coordinator", "location", "tags"})
+    @Query("SELECT DISTINCT e FROM EventEntity e WHERE e.eventId IN :eventIds")
+    List<EventEntity> findDetailedByEventIdIn(@Param("eventIds") Collection<Integer> eventIds);
+
+
 }

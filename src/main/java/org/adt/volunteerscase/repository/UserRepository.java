@@ -41,6 +41,13 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
 
     Optional<UserEntity> findById(Integer id);
 
+    @Query("SELECT u FROM UserEntity u LEFT JOIN FETCH u.userAuth WHERE u.email = :email AND u.deletedAt IS NULL")
+    Optional<UserEntity> findActiveByEmailWithAuth(@Param("email") String email);
+
+    Optional<UserEntity> findByUserIdAndDeletedAtIsNull(Integer userId);
+
+    Optional<UserEntity> findByEmailAndDeletedAtIsNull(String email);
+
     /**
      * Checks whether a user with the given email exists.
      *
@@ -58,5 +65,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
     boolean existsByPhoneNumber(String phoneNumber);
 
     boolean existsByTagsContaining(TagEntity tag);
+
 
 }
