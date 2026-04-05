@@ -28,13 +28,13 @@ public class UserEventEntity {
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("userId")
-    @JoinColumn(name = "userId", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("eventId")
-    @JoinColumn(name = "eventId", nullable = false)
+    @JoinColumn(name = "event_id", nullable = false)
     private EventEntity event;
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
@@ -50,19 +50,19 @@ public class UserEventEntity {
     private boolean revoked = false;
 
     @Size(max = 1000, message = "max size for reject reason is 1000")
-    @Column(name = "rejectReason", length = 1000)
+    @Column(name = "reject_reason", length = 1000)
     private String rejectReason;
 
-    @Column(name = "createdAt", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "rejectedAt")
+    @Column(name = "rejected_at")
     private LocalDateTime rejectedAt;
 
-    @Column(name = "revokedAt")
+    @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
-    @Column(name = "deletedAt")
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     @PrePersist

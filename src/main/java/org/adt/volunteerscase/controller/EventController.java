@@ -17,11 +17,14 @@ import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
 import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
 import org.adt.volunteerscase.dto.page.response.PageResponse;
+import org.adt.volunteerscase.entity.user.UserDetailsImpl;
+import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.service.EventService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -136,13 +139,38 @@ public class EventController {
             @Max(value = 100, message = "Page size must not exceed 100")
             @RequestParam(defaultValue = "10")
             int size
-    ){
+    ) {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(Sort.Direction.DESC,"dateTimestamp")
+                Sort.by(Sort.Direction.DESC, "dateTimestamp")
         );
 
         return ResponseEntity.ok().body(eventService.getAllEvents(pageable));
     }
+
+    @Operation(
+            summary = "получение рекомендованных мероприятий для пользователя"
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @GetMapping("/recommended")
+    public ResponseEntity<PageResponse<GetAllResponse>> getRecommendations(
+
+            @Parameter(description = "Номер страницы, начиная с 0", example = "0")
+            @Min(value = 0, message = "Page number must be greater than or equal to 0")
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @Parameter(description = "Количество элементов на странице", example = "10")
+            @Min(value = 1, message = "Page size must be at least 1")
+            @Max(value = 100, message = "Page size must not exceed 100")
+            @RequestParam(defaultValue = "10")
+            int size,
+
+            @AuthenticationPrincipal UserDetailsImpl currentUser
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok().body(eventService.getRecommendations(currentUser.getUser().getUserId(), pageable));
+    }
+
 }
