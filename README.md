@@ -45,8 +45,8 @@
       `SECRET_KEY=...`
 
       `ADMIN_PASSWORD=...`
-      `BASE_USER_PASSWORD...`
-      `BASE_USER_TWO_PASSWOR=...`
+      `BASE_USER_PASSWORD=...`
+      `BASE_USER_TWO_PASSWORD=...`
       `BASE_USER_THREE_PASSWORD=...`
 - `DB_URL` формируется внутри compose-файлов, подставляя указанные переменные.
 
