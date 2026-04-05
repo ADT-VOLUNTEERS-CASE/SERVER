@@ -7,8 +7,10 @@ import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
 import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
 import org.adt.volunteerscase.dto.page.response.PageResponse;
+import org.adt.volunteerscase.entity.user.UserDetailsImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 
 public interface EventService {
 
@@ -19,5 +21,6 @@ public interface EventService {
     PageResponse<GetAllResponse> getAllEvents(Pageable pageable);
 
 
+    PageResponse<GetAllResponse> getRecommendations(Integer currentUserId, Pageable pageable);
 }
 

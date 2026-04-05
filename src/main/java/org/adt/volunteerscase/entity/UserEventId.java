@@ -16,10 +16,10 @@ import java.io.Serializable;
 @Embeddable
 public class UserEventId implements Serializable {
 
-    @Column(name = "userId")
+    @Column(name = "user_id")
     private Integer userId;
 
-    @Column(name = "eventId")
+    @Column(name = "event_id")
     private Integer eventId;
 
 }

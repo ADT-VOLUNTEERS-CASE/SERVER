@@ -31,10 +31,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -224,6 +222,48 @@ public class EventServiceImpl implements EventService {
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
         return PageResponse.of(new PageImpl<>(content, pageable, eventPage.getTotalElements()));
+    }
+
+    @Override
+    public PageResponse<GetAllResponse> getRecommendations(Integer currentUserId, Pageable pageable) {
+
+        Page<Integer> recommendedEventIdPage = eventRepository.findRecommendedEventIds(
+                currentUserId,
+                LocalDateTime.now(),
+                pageable
+        );
+
+        if (recommendedEventIdPage.isEmpty()) {
+            return PageResponse.of(
+                    new PageImpl<>(
+                            Collections.emptyList(),
+                            recommendedEventIdPage.getPageable(),
+                            recommendedEventIdPage.getTotalElements()
+                    )
+            );
+        }
+
+        List<Integer> rankedEventIds = recommendedEventIdPage.getContent();
+        Map<Integer, Integer> eventOrder = new LinkedHashMap<>();
+
+        for (int index = 0; index < rankedEventIds.size(); index++) {
+            eventOrder.put(rankedEventIds.get(index), index);
+        }
+
+        List<GetAllResponse> content = eventRepository.findDetailedByEventIdIn(rankedEventIds).stream()
+                .sorted(Comparator.comparingInt(
+                        event -> eventOrder.getOrDefault(event.getEventId(), Integer.MAX_VALUE)
+                ))
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return PageResponse.of(
+                new PageImpl<>(
+                        content,
+                        recommendedEventIdPage.getPageable(),
+                        recommendedEventIdPage.getTotalElements()
+                )
+        );
     }
 
     @Transactional(readOnly = true)
