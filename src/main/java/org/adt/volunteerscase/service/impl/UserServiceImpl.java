@@ -198,7 +198,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     private List<UserEventShortResponse> getActiveUpcomingEvents(UserEntity userEntity, LocalDateTime now) {
 
-        List<EventEntity> events = userEventRepository.findActiveUpcomingEventsByUserId(userEntity.getUserId(), LocalDateTime.now());
+        List<EventEntity> events = userEventRepository.findActiveUpcomingEventsByUserId(userEntity.getUserId(), now);
         return events.stream()
                 .map(this::convertEventToUserEventShortResponse)
                 .collect(Collectors.toList());
