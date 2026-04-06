@@ -62,7 +62,7 @@ public class RefreshTokenService {
      * @return an Optional containing the matching RefreshTokenEntity if found, or empty if not found
      */
     @Transactional(readOnly = true)
-    Optional<RefreshTokenEntity> findByToken(String refreshToken) {
+    public Optional<RefreshTokenEntity> findByToken(String refreshToken) {
         return refreshTokenRepository.findByRefreshToken(refreshToken);
     }
 
