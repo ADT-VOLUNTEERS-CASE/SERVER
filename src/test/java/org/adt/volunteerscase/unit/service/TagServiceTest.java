@@ -250,4 +250,30 @@ public class TagServiceTest {
         verify(tagRepository).findByTagName("missing-tag");
     }
 
+    @Test
+    void deleteByName_shouldThrowException_whenTagNotFound() {
+        when(tagRepository.findByTagName("missing-tag")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tagService.deleteByName("missing-tag"))
+                .isInstanceOf(TagNotFoundException.class)
+                .hasMessage("tag with name - missing-tag not found");
+
+        verify(tagRepository).findByTagName("missing-tag");
+        verify(tagRepository, never()).deleteUserTagLinksByTagId(anyInt());
+        verify(tagRepository, never()).deleteEventTagLinksByTagId(anyInt());
+        verify(tagRepository, never()).delete(any(TagEntity.class));
+    }
+
+    @Test
+    void getByName_shouldReturnResponse_whenTagExists() {
+        when(tagRepository.findByTagName("volunteer")).thenReturn(Optional.of(existingTag));
+
+        TagGetResponse response = tagService.getByName("volunteer");
+
+        assertThat(response.getTagId()).isEqualTo(1);
+        assertThat(response.getTagName()).isEqualTo("volunteer");
+
+        verify(tagRepository).findByTagName("volunteer");
+    }
+
 }

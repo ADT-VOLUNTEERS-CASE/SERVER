@@ -368,6 +368,25 @@ public class AuthenticationServiceTest {
     }
 
     @Test
+    void refreshToken_shouldThrowException_whenRefreshTokenIsExpired() {
+        RefreshTokenEntity oldToken = buildRefreshToken("old-refresh-token", existingUser);
+
+        when(refreshTokenService.findByToken("old-refresh-token")).thenReturn(Optional.of(oldToken));
+        when(jwtService.generateAccessToken(any())).thenReturn("new-access-token");
+        when(refreshTokenService.rotateRefreshToken(oldToken))
+                .thenThrow(new RefreshTokenException("Refresh token expired"));
+
+        assertThatThrownBy(() -> authenticationService.refreshToken(validRefreshRequest))
+                .isInstanceOf(RefreshTokenException.class)
+                .hasMessage("Refresh token expired");
+
+        verify(refreshTokenService).findByToken("old-refresh-token");
+        verify(jwtService).generateAccessToken(any());
+        verify(refreshTokenService).rotateRefreshToken(oldToken);
+        verifyNoInteractions(userRepository, coordinatorRepository, passwordEncoder, authenticationManager);
+    }
+
+    @Test
     void authenticate_shouldReturnTokens_whenCredentialsAreValid() {
         when(userRepository.findActiveByEmailWithAuth(validAuthRequest.getEmail()))
                 .thenReturn(Optional.of(existingUser));
