@@ -122,7 +122,7 @@ public class EventController {
             description = "реализована пагинация, выводятся самые новые(по дате) события",
             responses = {
                     @ApiResponse(responseCode = "200", description = "данные получены"),
-                    @ApiResponse(responseCode = "400", description = "невалидные данные")
+                    @ApiResponse(responseCode = "400", description = "невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @GetMapping("/all")

@@ -4,9 +4,11 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
+import org.adt.volunteerscase.dto.user.response.UserEventShortResponse;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.UserEventEntity;
+import org.adt.volunteerscase.entity.event.EventEntity;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.exception.*;
 import org.adt.volunteerscase.repository.CoordinatorRepository;
@@ -177,6 +179,7 @@ public class UserServiceImpl implements UserService {
     }
 
     private GetUserResponse convertToResponse(UserEntity userEntity, CoordinatorEntity coordinatorEntity) {
+        LocalDateTime now = LocalDateTime.now();
         return GetUserResponse.builder()
                 .id(userEntity.getUserId())
                 .email(userEntity.getEmail())
@@ -188,8 +191,28 @@ public class UserServiceImpl implements UserService {
                 .patronymic(userEntity.getPatronymic())
                 .workLocation(coordinatorEntity != null ? coordinatorEntity.getWorkLocation() : null)
                 .tags(convertTagsToTagsDTO(userEntity.getTags()))
+                .events(getActiveUpcomingEvents(userEntity, now))
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    private List<UserEventShortResponse> getActiveUpcomingEvents(UserEntity userEntity, LocalDateTime now) {
+
+        List<EventEntity> events = userEventRepository.findActiveUpcomingEventsByUserId(userEntity.getUserId(), now);
+        return events.stream()
+                .map(this::convertEventToUserEventShortResponse)
+                .collect(Collectors.toList());
+    }
+
+    private UserEventShortResponse convertEventToUserEventShortResponse(EventEntity event) {
+        return UserEventShortResponse.builder()
+                .eventId(event.getEventId())
+                .name(event.getName())
+                .status(String.valueOf(event.getStatus()))
+                .dateTimestamp(event.getDateTimestamp())
+                .build();
+    }
+
 
     @Transactional(readOnly = true)
     private Set<TagEntityDTO> convertTagsToTagsDTO(Set<TagEntity> tagEntities){

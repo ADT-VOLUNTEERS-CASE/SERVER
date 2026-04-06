@@ -5,9 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
-import org.adt.volunteerscase.dto.tag.response.TagGetResponse;
-import org.adt.volunteerscase.entity.TagEntity;
 
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -29,6 +28,8 @@ public class GetUserResponse {
     private boolean isCoordinator;
 
     private Set<TagEntityDTO> tags;
+
+    private List<UserEventShortResponse> events;
 
     private String workLocation;
 

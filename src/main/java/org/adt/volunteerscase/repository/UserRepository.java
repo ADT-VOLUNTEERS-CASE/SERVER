@@ -66,5 +66,4 @@ public interface UserRepository extends JpaRepository<UserEntity, Integer> {
 
     boolean existsByTagsContaining(TagEntity tag);
 
-
 }
