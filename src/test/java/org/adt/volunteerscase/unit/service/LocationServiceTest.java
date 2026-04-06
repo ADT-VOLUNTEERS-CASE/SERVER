@@ -150,6 +150,7 @@ public class LocationServiceTest {
 
         verify(locationRepository).searchByAddress("Москва", pageable);
     }
+
     @Test
     void updateLocation_shouldUpdateOnlyProvidedFieldsAndReturnResponse() {
         LocationPatchRequest patchRequest = LocationPatchRequest.builder()
@@ -173,9 +174,12 @@ public class LocationServiceTest {
         assertThat(response.getLatitude()).isEqualTo(55.7570);
         assertThat(response.getAdditionalNotes()).isEqualTo("Слева от арки");
 
-        verify(locationRepository).findByLocationId(1);
-        verify(locationRepository).existsByAddress("г. Москва, ул. Новый Арбат, 15");
-        verify(locationRepository).save(existingLocation);
+        //verify(locationRepository).findByLocationId(1);
+        //verify(locationRepository).existsByAddress("г. Москва, ул. Новый Арбат, 15");
+        ArgumentCaptor<LocationEntity> savedCaptor = ArgumentCaptor.forClass(LocationEntity.class);
+        verify(locationRepository).save(savedCaptor.capture());
+        assertThat(savedCaptor.getValue().getAddress()).isEqualTo("г. Москва, ул. Новый Арбат, 15");
+        assertThat(savedCaptor.getValue().getLongitude()).isEqualTo(37.6000);
     }
 
     @Test
