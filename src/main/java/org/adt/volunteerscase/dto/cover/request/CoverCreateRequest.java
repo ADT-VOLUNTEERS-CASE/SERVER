@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 @NoArgsConstructor
 public class CoverCreateRequest {
 
-    @NotNull(message = "file is blank")
+    @NotNull(message = "file is null")
     @Schema(type = "string", format = "binary")
     private MultipartFile file;
 }

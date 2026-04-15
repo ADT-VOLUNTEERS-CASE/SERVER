@@ -46,8 +46,7 @@ public class S3ObjectStorageService implements ObjectStorageService {
                     .eTag(response.eTag())
                     .build();
         } catch (S3Exception ex) {
-            throw new CoverUploadException("cannot upload cover to S3" + ex);
-        }
+            throw new CoverUploadException("cannot upload cover to S3", ex);        }
     }
 
     @Override
@@ -64,8 +63,7 @@ public class S3ObjectStorageService implements ObjectStorageService {
                             .build()
             );
         } catch (S3Exception ex) {
-            throw new CoverUploadException("cannot delete cover from S3" + ex);
-        }
+            throw new CoverUploadException("cannot upload cover to S3", ex);        }
     }
 
     private String buildObjectKey(String fileName) {

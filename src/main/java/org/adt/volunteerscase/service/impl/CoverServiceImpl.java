@@ -20,6 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -93,9 +96,7 @@ public class CoverServiceImpl implements CoverService {
 
             CoverEntity updated = coverRepository.save(coverEntity);
 
-            if (StringUtils.hasText(previousObjectKey)) {
-                objectStorageService.deleteObject(previousObjectKey);
-            }
+            deleteObjectAfterCommit(previousObjectKey);
 
             return coverMapper.toResponse(updated);
         } catch (RuntimeException ex) {
@@ -113,14 +114,15 @@ public class CoverServiceImpl implements CoverService {
             throw new CoverInUseException("cover with id - " + coverId + " is used by event");
         }
 
-        CoverMetadataDTO metadata = coverMapper.decodeMetadata(coverEntity.getMetadata());
-        if (metadata != null) {
-            objectStorageService.deleteObject(metadata.getObjectKey());
-        }
+        CoverMetadataDTO metadata =
+                coverMapper.decodeMetadata(coverEntity.getMetadata());
+        String objectKey = metadata != null ? metadata.getObjectKey() :
+                null;
 
         coverEntity.setDeletedAt(Instant.now().toEpochMilli());
         coverRepository.save(coverEntity);
     }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -176,5 +178,23 @@ public class CoverServiceImpl implements CoverService {
                 .objectKey(uploaded.getObjectKey())
                 .eTag(uploaded.getETag())
                 .build();
+    }
+
+    private void deleteObjectAfterCommit(String objectKey) {
+        if (!StringUtils.hasText(objectKey)) {
+            return;
+        }
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            objectStorageService.deleteObject(objectKey);
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                objectStorageService.deleteObject(objectKey);
+            }
+        });
     }
 }

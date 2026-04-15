@@ -34,7 +34,7 @@ public class CoverMapper {
         try {
             byte[] decoded = Base64.getDecoder().decode(encodedMetadata);
             return objectMapper.readValue(decoded, CoverMetadataDTO.class);
-        } catch (IOException ex) {
+        } catch (IOException | IllegalArgumentException ex) {
             throw new IllegalStateException("cannot decode cover metadata", ex);
         }
     }

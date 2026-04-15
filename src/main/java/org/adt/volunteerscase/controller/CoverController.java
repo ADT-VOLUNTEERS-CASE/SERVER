@@ -26,11 +26,13 @@ public class CoverController {
     private final CoverService coverService;
 
     @Operation(
-            summary = "загрузка новой обложки в S3",
+            summary = "загрузка новой обложки",
             responses = {
                     @ApiResponse(responseCode = "201", description = "успешно создано"),
                     @ApiResponse(responseCode = "400", description = "невалидный файл", content
-                            = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                            = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "413", description = "файл слишком большой для загрузки", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "ошибка загрузки файла в s3", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")

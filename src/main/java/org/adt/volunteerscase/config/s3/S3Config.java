@@ -22,6 +22,9 @@ public class S3Config {
 
     @Bean
     public S3Client s3Client() {
+        if (!StringUtils.hasText(properties.getRegion())) {
+            throw new IllegalStateException("storage.s3.region must be configured");
+        }
         S3ClientBuilder builder = S3Client.builder()
                 .region(Region.of(properties.getRegion()))
                 .credentialsProvider(

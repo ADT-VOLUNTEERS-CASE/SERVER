@@ -150,29 +150,6 @@ public class DataLoader implements CommandLineRunner {
                 37.679993
         );
 
-
-        //creating covers
-//        CoverEntity firstCover = createCover(
-//
-//                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDqaqlQ9fOyfjdxC23m2wqxdf-aKIlEDHyJQ&s",
-//                564,
-//                800
-//        );
-//        CoverEntity secondCover = createCover(
-//                "https://uxwing.com/wp-content/themes/uxwing/download/sport-and-awards/second-icon.png",
-//                512,
-//                512
-//        );
-//        CoverEntity thirdCover = createCover("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRs-01jMpdHl7jsfth1ZE8igfpl1ijFkdPaGA&s", 564, 800);
-//        CoverEntity fourthCover = createCover("https://storage.ettip.com/Upload/Images/Vocabulary/Official/4830.png", 300, 300);
-//        CoverEntity fifthCover = createCover("https://lingolandedu.com/en/english-english-dictionary/fifth", 400, 390);
-//        CoverEntity sixthCover = createCover("link six", 100, 100);
-//        CoverEntity seventhCover = createCover("lin seven", 100, 100);
-//        CoverEntity eighthCover = createCover("link eight", 100, 100);
-//        CoverEntity ninthCover = createCover("link ninth", 100, 100);
-//        CoverEntity tenthCover = createCover("link ten", 100, 100);
-
-
         //creating tags
         Set<TagEntity> adminTags = new HashSet<>();
         TagEntity adminTag1 = createTag("adminTag1", admin);
@@ -466,21 +443,6 @@ public class DataLoader implements CommandLineRunner {
         return locationRepository.findByAddress(address)
                 .orElseThrow(() -> new LocationNotFoundException("location with address - " + address + " not found"));
     }
-
-//    private CoverEntity createCover(String link, Integer width, Integer height) {
-//        if (!coverRepository.existsByLink(link)) {
-//
-//            CoverEntity coverEntity = CoverEntity.builder()
-//                    .link(link)
-//                    .width(width)
-//                    .height(height)
-//                    .build();
-//
-//            coverRepository.save(coverEntity);
-//        }
-//        return coverRepository.findByLink(link)
-//                .orElseThrow(() -> new CoverNotFoundException("cover with link - " + link + " not found"));
-//    }
 
     private TagEntity createTag(String tagName, UserEntity currentUser) {
 
