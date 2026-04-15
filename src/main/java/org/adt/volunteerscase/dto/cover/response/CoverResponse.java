@@ -13,7 +13,6 @@ import org.adt.volunteerscase.dto.cover.CoverMetadataDTO;
 public class CoverResponse {
     private Integer coverId;
     private String link;
-    private String metadata;
     private Long createdAt;
     private Long deletedAt;
     private CoverMetadataDTO fileMetadata;

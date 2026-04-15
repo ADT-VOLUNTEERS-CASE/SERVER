@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 @RestController
 @RequestMapping("api/v1/cover")
@@ -27,6 +28,14 @@ public class CoverController {
 
     @Operation(
             summary = "загрузка новой обложки",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation =
+                                    CoverCreateRequest.class)
+                    )
+            ),
             responses = {
                     @ApiResponse(responseCode = "201", description = "успешно создано"),
                     @ApiResponse(responseCode = "400", description = "невалидный файл", content
@@ -45,13 +54,24 @@ public class CoverController {
 
     @Operation(
             summary = "замена файла обложки",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation =
+                                    CoverPatchRequest.class)
+                    )
+            ),
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно обновлено"),
                     @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
                     @ApiResponse(responseCode = "400", description = "невалидный файл", content
-                            = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                            = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "413", description = "файл слишком большой для загрузки", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "ошибка загрузки файла в s3", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
+
     @SecurityRequirement(name = "jwtAuth")
     @PatchMapping(value = "/{coverId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CoverResponse> updateCover(
@@ -62,7 +82,13 @@ public class CoverController {
     }
 
     @Operation(
-            summary = "мягкое удаление обложки"
+            summary = "удаление обложки",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "успешно удалено"),
+                    @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "обложка используется мероприятием", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "ошибка удаления файла из s3", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
     )
     @SecurityRequirement(name = "jwtAuth")
     @DeleteMapping("/{coverId}")

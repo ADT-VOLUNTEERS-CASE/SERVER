@@ -42,10 +42,22 @@ public class S3Config {
                 );
 
 
-        if (StringUtils.hasText(properties.getEndpoint())) {
-            builder.endpointOverride(URI.create(properties.getEndpoint()));
-        }
+        builder.endpointOverride(endpointUri());
 
         return builder.build();
     }
+
+    private URI endpointUri() {
+        if (!StringUtils.hasText(properties.getEndpoint())) {
+            throw new IllegalStateException("storage.s3.endpoint must be configured");
+        }
+
+        URI endpoint = URI.create(properties.getEndpoint());
+        if (!StringUtils.hasText(endpoint.getScheme())) {
+            throw new IllegalStateException("storage.s3.endpoint must include URI scheme, for example https://s3.example.com");
+        }
+
+        return endpoint;
+    }
+
 }

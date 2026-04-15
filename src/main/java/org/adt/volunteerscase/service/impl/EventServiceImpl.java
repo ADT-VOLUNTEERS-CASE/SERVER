@@ -2,7 +2,6 @@ package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
-import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
 import org.adt.volunteerscase.dto.cover.CoverMapper;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;

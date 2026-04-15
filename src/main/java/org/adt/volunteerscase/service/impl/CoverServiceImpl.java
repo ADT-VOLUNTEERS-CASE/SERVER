@@ -1,6 +1,7 @@
 package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.adt.volunteerscase.dto.cover.CoverMapper;
 import org.adt.volunteerscase.dto.cover.CoverMetadataDTO;
 import org.adt.volunteerscase.dto.cover.request.CoverCreateRequest;
@@ -30,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.time.Instant;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CoverServiceImpl implements CoverService {
@@ -47,11 +49,14 @@ public class CoverServiceImpl implements CoverService {
 
         byte[] content = readBytes(file);
         BufferedImage image = readImage(content);
+
         StoredObjectResult uploaded = objectStorageService.uploadCover(
                 file.getOriginalFilename(),
                 file.getContentType(),
                 content
         );
+
+        deleteNewObjectOnRollback(uploaded.getObjectKey());
 
         CoverMetadataDTO metadata = buildMetadata(file, image, uploaded);
 
@@ -86,6 +91,8 @@ public class CoverServiceImpl implements CoverService {
                 content
         );
 
+        deleteNewObjectOnRollback(uploaded.getObjectKey());
+
         CoverMetadataDTO newMetadata = buildMetadata(file, image, uploaded);
         String previousObjectKey = previousMetadata != null ? previousMetadata.getObjectKey() :
                 null;
@@ -114,8 +121,15 @@ public class CoverServiceImpl implements CoverService {
             throw new CoverInUseException("cover with id - " + coverId + " is used by event");
         }
 
+        CoverMetadataDTO metadata =
+                coverMapper.decodeMetadata(coverEntity.getMetadata());
+        String objectKey = metadata != null ? metadata.getObjectKey() :
+                null;
+
         coverEntity.setDeletedAt(Instant.now().toEpochMilli());
-        coverRepository.save(coverEntity);
+        coverRepository.saveAndFlush(coverEntity);
+
+        deleteObjectAfterCommit(objectKey);
     }
 
 
@@ -181,14 +195,43 @@ public class CoverServiceImpl implements CoverService {
         }
 
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            objectStorageService.deleteObject(objectKey);
+            safeDeleteObject(objectKey);
             return;
         }
 
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                objectStorageService.deleteObject(objectKey);
+                safeDeleteObject(objectKey);
+            }
+        });
+    }
+
+    private void safeDeleteObject(String objectKey) {
+        try {
+            objectStorageService.deleteObject(objectKey);
+        } catch (RuntimeException ex) {
+            log.warn("Failed to delete S3 object after transaction commit: {}", objectKey, ex);
+        }
+    }
+
+
+
+    private void deleteNewObjectOnRollback(String objectKey) {
+        if (!StringUtils.hasText(objectKey)) {
+            return;
+        }
+
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status == STATUS_ROLLED_BACK) {
+                    objectStorageService.deleteObject(objectKey);
+                }
             }
         });
     }
