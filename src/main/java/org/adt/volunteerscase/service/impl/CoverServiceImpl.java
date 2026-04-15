@@ -114,11 +114,6 @@ public class CoverServiceImpl implements CoverService {
             throw new CoverInUseException("cover with id - " + coverId + " is used by event");
         }
 
-        CoverMetadataDTO metadata =
-                coverMapper.decodeMetadata(coverEntity.getMetadata());
-        String objectKey = metadata != null ? metadata.getObjectKey() :
-                null;
-
         coverEntity.setDeletedAt(Instant.now().toEpochMilli());
         coverRepository.save(coverEntity);
     }

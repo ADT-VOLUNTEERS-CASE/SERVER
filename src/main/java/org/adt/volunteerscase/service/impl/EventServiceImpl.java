@@ -351,17 +351,27 @@ public class EventServiceImpl implements EventService {
                 : ex.getMessage();
 
         if (message != null && message.contains("uk_event_cover")) {
+            String coverIdMessage = event.getCover() != null
+                    ? " with id - " + event.getCover().getCoverId()
+                    : "";
+
             return new CoverAlreadyExistsException(
-                    "cover with id - " + event.getCover().getCoverId() + " is already used by another event"
+                    "cover" + coverIdMessage + " is already used by another event"
             );
         }
 
+
         if (message != null && message.contains("uk_event_location_datetime")) {
+            String locationIdMessage = event.getLocation() != null
+                    ? " with id - " + event.getLocation().getLocationId()
+                    : "";
+
             return new LocationAlreadyExistsException(
-                    "location with id - " + event.getLocation().getLocationId()
-                            + " is occupied in date - " + event.getDateTimestamp()
+                    "location" + locationIdMessage + " is occupied in date - "
+                            + event.getDateTimestamp()
             );
         }
+
 
         return ex;
     }

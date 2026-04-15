@@ -13,7 +13,6 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ToString(exclude = {"accessKey", "secretKey"})
 public class S3Properties {
-    @NotBlank(message = "endpoint in S3Properties is blank")
     private String endpoint;
     @NotBlank(message = "region in S3Properties is blank")
     private String region;
@@ -26,6 +25,5 @@ public class S3Properties {
     @NotBlank(message = "publicBaseUrl in S3Properties is blank")
     private String publicBaseUrl;
     private String coverPrefix = "covers";
-    @NotBlank(message = "pathStyleAccess in S3Properties is blank")
     private boolean pathStyleAccess;
 }
