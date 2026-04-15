@@ -45,5 +45,6 @@ public class EventPatchRequest {
 
     private Boolean clearTags = false;
 
+    private Boolean clearCover = false;
 
 }

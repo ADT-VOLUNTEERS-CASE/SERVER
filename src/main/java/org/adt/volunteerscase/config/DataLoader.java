@@ -152,25 +152,25 @@ public class DataLoader implements CommandLineRunner {
 
 
         //creating covers
-        CoverEntity firstCover = createCover(
-
-                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDqaqlQ9fOyfjdxC23m2wqxdf-aKIlEDHyJQ&s",
-                564,
-                800
-        );
-        CoverEntity secondCover = createCover(
-                "https://uxwing.com/wp-content/themes/uxwing/download/sport-and-awards/second-icon.png",
-                512,
-                512
-        );
-        CoverEntity thirdCover = createCover("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRs-01jMpdHl7jsfth1ZE8igfpl1ijFkdPaGA&s", 564, 800);
-        CoverEntity fourthCover = createCover("https://storage.ettip.com/Upload/Images/Vocabulary/Official/4830.png", 300, 300);
-        CoverEntity fifthCover = createCover("https://lingolandedu.com/en/english-english-dictionary/fifth", 400, 390);
-        CoverEntity sixthCover = createCover("link six", 100, 100);
-        CoverEntity seventhCover = createCover("lin seven", 100, 100);
-        CoverEntity eighthCover = createCover("link eight", 100, 100);
-        CoverEntity ninthCover = createCover("link ninth", 100, 100);
-        CoverEntity tenthCover = createCover("link ten", 100, 100);
+//        CoverEntity firstCover = createCover(
+//
+//                "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSDqaqlQ9fOyfjdxC23m2wqxdf-aKIlEDHyJQ&s",
+//                564,
+//                800
+//        );
+//        CoverEntity secondCover = createCover(
+//                "https://uxwing.com/wp-content/themes/uxwing/download/sport-and-awards/second-icon.png",
+//                512,
+//                512
+//        );
+//        CoverEntity thirdCover = createCover("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRs-01jMpdHl7jsfth1ZE8igfpl1ijFkdPaGA&s", 564, 800);
+//        CoverEntity fourthCover = createCover("https://storage.ettip.com/Upload/Images/Vocabulary/Official/4830.png", 300, 300);
+//        CoverEntity fifthCover = createCover("https://lingolandedu.com/en/english-english-dictionary/fifth", 400, 390);
+//        CoverEntity sixthCover = createCover("link six", 100, 100);
+//        CoverEntity seventhCover = createCover("lin seven", 100, 100);
+//        CoverEntity eighthCover = createCover("link eight", 100, 100);
+//        CoverEntity ninthCover = createCover("link ninth", 100, 100);
+//        CoverEntity tenthCover = createCover("link ten", 100, 100);
 
 
         //creating tags
@@ -237,7 +237,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.COMPLETED,
                 "first event",
                 "first event, completed",
-                firstCover,
+                null,
                 coordinator,
                 100,
                 seedNow.minusDays(60),
@@ -248,7 +248,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.COMPLETED,
                 "second event",
                 "second event, completed",
-                secondCover,
+                null,
                 coordinator,
                 67,
                 seedNow.minusDays(61),
@@ -260,7 +260,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.ONGOING,
                 "park cleanup day",
                 "future event for the base user: two matching tags and high popularity",
-                thirdCover,
+                null,
                 coordinator,
                 120,
                 seedNow.plusDays(7),
@@ -271,7 +271,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.IN_PROGRESS,
                 "animal shelter weekend",
                 "future event for the second base user: two matching tags and high popularity",
-                fourthCover,
+                null,
                 coordinator,
                 80,
                 seedNow.plusDays(10),
@@ -282,7 +282,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.ONGOING,
                 "medical support shift",
                 "future event for the third base user: two matching tags and active applications",
-                fifthCover,
+                null,
                 coordinator,
                 50,
                 seedNow.plusDays(14),
@@ -293,7 +293,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.IN_PROGRESS,
                 "logistics hub day",
                 "future event with mixed tags for recommendation tie checks",
-                sixthCover,
+                null,
                 coordinator,
                 90,
                 seedNow.plusDays(18),
@@ -304,7 +304,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.ONGOING,
                 "photo marathon",
                 "future event with lower popularity for ranking checks",
-                seventhCover,
+                null,
                 coordinator,
                 70,
                 seedNow.plusDays(21),
@@ -315,7 +315,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.COMPLETED,
                 "future completed event",
                 "should be excluded by status even though its date is in the future",
-                eighthCover,
+                null,
                 coordinator,
                 40,
                 seedNow.plusDays(30),
@@ -326,7 +326,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.IN_PROGRESS,
                 "past in progress event",
                 "should be excluded by date even though its status is not completed",
-                ninthCover,
+                null,
                 coordinator,
                 40,
                 seedNow.minusDays(5),
@@ -337,7 +337,7 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.IN_PROGRESS,
                 "eco forum booth",
                 "future event with zero active popularity for sorting checks",
-                tenthCover,
+                null,
                 coordinator,
                 60,
                 seedNow.plusDays(35),
@@ -467,20 +467,20 @@ public class DataLoader implements CommandLineRunner {
                 .orElseThrow(() -> new LocationNotFoundException("location with address - " + address + " not found"));
     }
 
-    private CoverEntity createCover(String link, Integer width, Integer height) {
-        if (!coverRepository.existsByLink(link)) {
-
-            CoverEntity coverEntity = CoverEntity.builder()
-                    .link(link)
-                    .width(width)
-                    .height(height)
-                    .build();
-
-            coverRepository.save(coverEntity);
-        }
-        return coverRepository.findByLink(link)
-                .orElseThrow(() -> new CoverNotFoundException("cover with link - " + link + " not found"));
-    }
+//    private CoverEntity createCover(String link, Integer width, Integer height) {
+//        if (!coverRepository.existsByLink(link)) {
+//
+//            CoverEntity coverEntity = CoverEntity.builder()
+//                    .link(link)
+//                    .width(width)
+//                    .height(height)
+//                    .build();
+//
+//            coverRepository.save(coverEntity);
+//        }
+//        return coverRepository.findByLink(link)
+//                .orElseThrow(() -> new CoverNotFoundException("cover with link - " + link + " not found"));
+//    }
 
     private TagEntity createTag(String tagName, UserEntity currentUser) {
 
