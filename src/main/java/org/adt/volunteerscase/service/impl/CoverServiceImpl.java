@@ -24,7 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -94,22 +93,17 @@ public class CoverServiceImpl implements CoverService {
         deleteNewObjectOnRollback(uploaded.getObjectKey());
 
         CoverMetadataDTO newMetadata = buildMetadata(file, image, uploaded);
-        String previousObjectKey = previousMetadata != null ? previousMetadata.getObjectKey() :
-                null;
+        String previousObjectKey = previousMetadata != null ?
+                previousMetadata.getObjectKey() : null;
 
-        try {
-            coverEntity.setLink(uploaded.getLink());
-            coverEntity.setMetadata(coverMapper.encodeMetadata(newMetadata));
+        coverEntity.setLink(uploaded.getLink());
+        coverEntity.setMetadata(coverMapper.encodeMetadata(newMetadata));
 
-            CoverEntity updated = coverRepository.save(coverEntity);
+        CoverEntity updated = coverRepository.saveAndFlush(coverEntity);
 
-            deleteObjectAfterCommit(previousObjectKey);
+        deleteObjectAfterCommit(previousObjectKey);
 
-            return coverMapper.toResponse(updated);
-        } catch (RuntimeException ex) {
-            objectStorageService.deleteObject(uploaded.getObjectKey());
-            throw ex;
-        }
+        return coverMapper.toResponse(updated);
     }
 
     @Override
@@ -216,7 +210,6 @@ public class CoverServiceImpl implements CoverService {
     }
 
 
-
     private void deleteNewObjectOnRollback(String objectKey) {
         if (!StringUtils.hasText(objectKey)) {
             return;
@@ -230,7 +223,7 @@ public class CoverServiceImpl implements CoverService {
             @Override
             public void afterCompletion(int status) {
                 if (status == STATUS_ROLLED_BACK) {
-                    objectStorageService.deleteObject(objectKey);
+                    safeDeleteObject(objectKey);
                 }
             }
         });

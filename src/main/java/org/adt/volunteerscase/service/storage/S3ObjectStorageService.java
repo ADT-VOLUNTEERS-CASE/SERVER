@@ -5,6 +5,7 @@ import org.adt.volunteerscase.config.s3.S3Properties;
 import org.adt.volunteerscase.exception.CoverUploadException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -45,8 +46,9 @@ public class S3ObjectStorageService implements ObjectStorageService {
                     .link(buildPublicLink(objectKey))
                     .eTag(response.eTag())
                     .build();
-        } catch (S3Exception ex) {
-            throw new CoverUploadException("cannot upload cover to S3", ex);        }
+        } catch (S3Exception | SdkClientException ex) {
+            throw new CoverUploadException("cannot upload cover to S3", ex);
+        }
     }
 
     @Override
@@ -62,8 +64,9 @@ public class S3ObjectStorageService implements ObjectStorageService {
                             .key(objectKey)
                             .build()
             );
-        } catch (S3Exception ex) {
-            throw new CoverUploadException("cannot upload cover from S3", ex);        }
+        } catch (S3Exception | SdkClientException ex) {
+            throw new CoverUploadException("cannot upload cover from S3", ex);
+        }
     }
 
     private String buildObjectKey(String fileName) {
