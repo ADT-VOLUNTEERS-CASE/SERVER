@@ -14,7 +14,18 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import org.adt.volunteerscase.dto.cover.CoverMapper;
+import org.adt.volunteerscase.dto.cover.CoverMetadataDTO;
+import org.adt.volunteerscase.service.storage.ObjectStorageService;
+import org.adt.volunteerscase.service.storage.StoredObjectResult;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,6 +44,8 @@ public class DataLoader implements CommandLineRunner {
     private final EventRepository eventRepository;
     private final CoordinatorRepository coordinatorRepository;
     private final UserEventRepository userEventRepository;
+    private final ObjectStorageService objectStorageService;
+    private final CoverMapper coverMapper;
 
 
     @Value("${ADMIN_PASSWORD}")
@@ -221,6 +234,7 @@ public class DataLoader implements CommandLineRunner {
                 firstLocation,
                 firstEventTags
         );
+
         EventEntity secondEvent = createEvent(
                 EventStatus.COMPLETED,
                 "second event",
@@ -237,57 +251,62 @@ public class DataLoader implements CommandLineRunner {
                 EventStatus.ONGOING,
                 "park cleanup day",
                 "future event for the base user: two matching tags and high popularity",
-                null,
+                "images/park-cleanup.png",
                 coordinator,
                 120,
                 seedNow.plusDays(7),
                 thirdLocation,
                 parkCleanupTags
         );
+
         EventEntity animalShelterEvent = createEvent(
                 EventStatus.IN_PROGRESS,
                 "animal shelter weekend",
                 "future event for the second base user: two matching tags and high popularity",
-                null,
+                "images/animal-shelter.png",
                 coordinator,
                 80,
                 seedNow.plusDays(10),
                 fourthLocation,
                 animalShelterTags
         );
-        EventEntity medicalSupportEvent = createEvent(
+
+        EventEntity festivalEvent = createEvent(
                 EventStatus.ONGOING,
-                "medical support shift",
+                "festival in park",
                 "future event for the third base user: two matching tags and active applications",
-                null,
+                "images/park_sokolniky.png",
                 coordinator,
                 50,
                 seedNow.plusDays(14),
                 fifthLocation,
                 medicalSupportTags
         );
-        EventEntity logisticsHubEvent = createEvent(
+
+        EventEntity theaterDayEvent = createEvent(
                 EventStatus.IN_PROGRESS,
-                "logistics hub day",
+                "theater day",
                 "future event with mixed tags for recommendation tie checks",
-                null,
+                "images/theater_square.png",
                 coordinator,
                 90,
                 seedNow.plusDays(18),
                 firstLocation,
                 logisticsHubTags
         );
+
         EventEntity photoMarathonEvent = createEvent(
                 EventStatus.ONGOING,
                 "photo marathon",
                 "future event with lower popularity for ranking checks",
-                null,
+                "images/photo-marathon.png",
                 coordinator,
                 70,
                 seedNow.plusDays(21),
                 secondLocation,
                 photoMarathonTags
         );
+
         EventEntity futureCompletedEvent = createEvent(
                 EventStatus.COMPLETED,
                 "future completed event",
@@ -299,6 +318,7 @@ public class DataLoader implements CommandLineRunner {
                 thirdLocation,
                 futureCompletedTags
         );
+
         EventEntity pastInProgressEvent = createEvent(
                 EventStatus.IN_PROGRESS,
                 "past in progress event",
@@ -310,17 +330,19 @@ public class DataLoader implements CommandLineRunner {
                 fourthLocation,
                 pastInProgressTags
         );
+
         EventEntity ecoForumEvent = createEvent(
                 EventStatus.IN_PROGRESS,
                 "eco forum booth",
                 "future event with zero active popularity for sorting checks",
-                null,
+                "images/eco-forum.png",
                 coordinator,
                 60,
                 seedNow.plusDays(35),
                 fifthLocation,
                 ecoForumTags
         );
+
 
         createUserEvent(admin, parkCleanupEvent, true, false, false, null);
         createUserEvent(userTwo, parkCleanupEvent, false, false, false, null);
@@ -330,13 +352,13 @@ public class DataLoader implements CommandLineRunner {
         createUserEvent(user, animalShelterEvent, false, false, false, null);
         createUserEvent(userThree, animalShelterEvent, false, false, false, null);
 
-        createUserEvent(user, medicalSupportEvent, true, false, false, null);
-        createUserEvent(userTwo, medicalSupportEvent, false, false, false, null);
-        createUserEvent(admin, medicalSupportEvent, false, false, true, null);
+        createUserEvent(user, festivalEvent, true, false, false, null);
+        createUserEvent(userTwo, festivalEvent, false, false, false, null);
+        createUserEvent(admin, festivalEvent, false, false, true, null);
 
-        createUserEvent(admin, logisticsHubEvent, true, false, false, null);
-        createUserEvent(userTwo, logisticsHubEvent, false, false, false, null);
-        createUserEvent(user, logisticsHubEvent, false, false, false, seedNow.minusDays(1));
+        createUserEvent(admin, theaterDayEvent, true, false, false, null);
+        createUserEvent(userTwo, theaterDayEvent, false, false, false, null);
+        createUserEvent(user, theaterDayEvent, false, false, false, seedNow.minusDays(1));
 
         createUserEvent(admin, photoMarathonEvent, true, false, false, null);
         createUserEvent(userThree, photoMarathonEvent, false, false, false, null);
@@ -467,7 +489,7 @@ public class DataLoader implements CommandLineRunner {
             EventStatus status,
             String name,
             String description,
-            CoverEntity cover,
+            String coverResourcePath,
             CoordinatorEntity coordinator,
             Integer maxCapacity,
             LocalDateTime dateTimestamp,
@@ -475,22 +497,26 @@ public class DataLoader implements CommandLineRunner {
             Set<TagEntity> tags
     ) {
         EventEntity existingByName = eventRepository.findByName(name).orElse(null);
+
         if (existingByName != null) {
+            if (existingByName.getCover() == null && coverResourcePath != null) {
+                CoverEntity cover = createSeedCover(coverResourcePath);
+                existingByName.setCover(cover);
+                try {
+                    return eventRepository.saveAndFlush(existingByName);
+                } catch (RuntimeException ex) {
+                    deleteSeedCoverObjectQuietly(cover);
+                    throw ex;
+                }
+            }
             return existingByName;
         }
 
-        if (cover != null) {
-            EventEntity existingByCover = eventRepository.findByCover(cover).orElse(null);
-            if (existingByCover != null) {
-                throw new IllegalStateException(
-                        "seed event '" + name + "' cannot be created: cover with id "
-                                + cover.getCoverId()
-                                + " is already used by event '" + existingByCover.getName() + "'"
-                );
-            }
-        }
+        CoverEntity cover = coverResourcePath != null ? createSeedCover(coverResourcePath) : null;
 
-        if (location != null && eventRepository.existsByLocationAndDateTimestamp(location, dateTimestamp)) {
+        if (location != null && eventRepository.existsByLocationAndDateTimestamp(location,
+                dateTimestamp)) {
+            deleteSeedCoverObjectQuietly(cover);
             throw new IllegalStateException(
                     "seed event '" + name + "' cannot be created: location '"
                             + location.getAddress()
@@ -510,8 +536,87 @@ public class DataLoader implements CommandLineRunner {
                 .tags(tags)
                 .build();
 
-        return eventRepository.saveAndFlush(event);
+        try {
+            return eventRepository.saveAndFlush(event);
+        } catch (RuntimeException ex) {
+            deleteSeedCoverObjectQuietly(cover);
+            throw ex;
+        }
     }
+
+    private CoverEntity createSeedCover(String resourcePath) {
+        Resource resource = new ClassPathResource(resourcePath);
+
+        if (!resource.exists()) {
+            throw new IllegalStateException("seed cover resource not found: " + resourcePath);
+        }
+
+        StoredObjectResult uploaded = null;
+
+        try {
+            byte[] content = resource.getInputStream().readAllBytes();
+            BufferedImage image = ImageIO.read(new ByteArrayInputStream(content));
+
+            if (image == null) {
+                throw new IllegalStateException("seed cover is not a valid image: " +
+                        resourcePath);
+            }
+
+            String originalFileName = resource.getFilename();
+            String contentType = "image/png";
+
+            uploaded = objectStorageService.uploadCover(
+                    originalFileName,
+                    contentType,
+                    content
+            );
+
+            CoverMetadataDTO metadata = CoverMetadataDTO.builder()
+                    .originalFileName(originalFileName)
+                    .contentType(contentType)
+                    .size((long) content.length)
+                    .width(image.getWidth())
+                    .height(image.getHeight())
+                    .bucket(uploaded.getBucket())
+                    .objectKey(uploaded.getObjectKey())
+                    .eTag(uploaded.getETag())
+                    .build();
+
+            return coverRepository.save(
+                    CoverEntity.builder()
+                            .link(uploaded.getLink())
+                            .metadata(coverMapper.encodeMetadata(metadata))
+                            .createdAt(Instant.now().toEpochMilli())
+                            .deletedAt(null)
+                            .build()
+            );
+        } catch (IOException ex) {
+            if (uploaded != null) {
+                objectStorageService.deleteObject(uploaded.getObjectKey());
+            }
+            throw new IllegalStateException("cannot read seed cover: " + resourcePath, ex);
+        } catch (RuntimeException ex) {
+            if (uploaded != null) {
+                objectStorageService.deleteObject(uploaded.getObjectKey());
+            }
+            throw ex;
+        }
+    }
+
+    private void deleteSeedCoverObjectQuietly(CoverEntity cover) {
+        if (cover == null) {
+            return;
+        }
+
+        try {
+            CoverMetadataDTO metadata = coverMapper.decodeMetadata(cover.getMetadata());
+            if (metadata != null && metadata.getObjectKey() != null) {
+                objectStorageService.deleteObject(metadata.getObjectKey());
+            }
+        } catch (RuntimeException ignored) {
+        }
+    }
+
 
 
     private UserEventEntity createUserEvent(
@@ -560,7 +665,6 @@ public class DataLoader implements CommandLineRunner {
 
         return userEventRepository.saveAndFlush(userEvent);
     }
-
 
 
 }
