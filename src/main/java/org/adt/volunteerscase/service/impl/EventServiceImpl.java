@@ -2,7 +2,7 @@ package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
-import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
+import org.adt.volunteerscase.dto.cover.CoverMapper;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
 import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
@@ -45,6 +45,8 @@ public class EventServiceImpl implements EventService {
     private final LocationRepository locationRepository;
     private final CoordinatorRepository coordinatorRepository;
     private final TagService tagService;
+    private final CoverMapper coverMapper;
+
 
     @Override
     @Transactional
@@ -64,12 +66,14 @@ public class EventServiceImpl implements EventService {
 
         CoverEntity coverEntity = null;
         if (request.getCoverId() != null) {
-            coverEntity = coverRepository.findByCoverId(request.getCoverId())
-                    .orElseThrow(() -> new CoverNotFoundException("cover with id - " + request.getCoverId() + " not found"));
+            coverEntity = coverRepository.findByCoverIdAndDeletedAtIsNull(request.getCoverId())
+                    .orElseThrow(() -> new CoverNotFoundException("cover with id - " +
+                            request.getCoverId() + " not found"));
             if (eventRepository.existsByCover(coverEntity)) {
                 throw new CoverAlreadyExistsException("cover with id - " + request.getCoverId() + " already exists");
             }
         }
+
 
         CoordinatorEntity coordinatorEntity = coordinatorRepository.findById(request.getCoordinatorId())
                 .orElseThrow(() -> new CoordinatorNotFoundException(
@@ -141,14 +145,26 @@ public class EventServiceImpl implements EventService {
                 );
             }
         }
+
+        if (Boolean.TRUE.equals(request.getClearCover()) && request.getCoverId() != null) {
+            throw new SimultaneouslyCleaningAndWritingCoverException("clearCover and coverId cannot be used together");
+        }
+
+        if (Boolean.TRUE.equals(request.getClearCover())) {
+            event.setCover(null);
+        }
+
         if (request.getCoverId() != null) {
-            CoverEntity coverEntity = coverRepository.findByCoverId(request.getCoverId())
-                    .orElseThrow(() -> new CoverNotFoundException("cover with id - " + request.getCoverId() + " not found"));
+            CoverEntity coverEntity =
+                    coverRepository.findByCoverIdAndDeletedAtIsNull(request.getCoverId())
+                            .orElseThrow(() -> new CoverNotFoundException("cover with id - " +
+                                    request.getCoverId() + " not found"));
             if (eventRepository.existsByCoverAndEventIdNot(coverEntity, eventId)) {
                 throw new CoverAlreadyExistsException("cover with id - " + request.getCoverId() + " already exists");
             }
             event.setCover(coverEntity);
         }
+
 
         if (request.getEventStatus() != null) {
             event.setStatus(EventStatus.valueOf(request.getEventStatus()));
@@ -181,7 +197,7 @@ public class EventServiceImpl implements EventService {
                 .name(updateEvent.getName())
                 .description(updateEvent.getDescription())
                 .status(updateEvent.getStatus())
-                .coverId(event.getCover() != null ? event.getCover().getCoverId() : null)
+                .cover(coverMapper.toDto(updateEvent.getCover()))
                 .coordinator(convertCoordinatorToDTO(updateEvent.getCoordinator()))
                 .maxCapacity(updateEvent.getMaxCapacity())
                 .dateTimestamp(updateEvent.getDateTimestamp())
@@ -273,7 +289,7 @@ public class EventServiceImpl implements EventService {
                 .status(event.getStatus())
                 .name(event.getName())
                 .description(event.getDescription())
-                .cover(convertCoverToDTO(event.getCover()))
+                .cover(coverMapper.toDto(event.getCover()))
                 .coordinator(convertCoordinatorToDTO(event.getCoordinator()))
                 .maxCapacity(event.getMaxCapacity())
                 .dateTimestamp(event.getDateTimestamp())
@@ -313,19 +329,6 @@ public class EventServiceImpl implements EventService {
     }
 
     @Transactional(readOnly = true)
-    private CoverEntityDTO convertCoverToDTO(CoverEntity cover) {
-        if (cover == null) {
-            return null;
-        }
-        return CoverEntityDTO.builder()
-                .link(cover.getLink())
-                .coverId(cover.getCoverId())
-                .width(cover.getWidth())
-                .height(cover.getHeight())
-                .build();
-    }
-
-    @Transactional(readOnly = true)
     private CoordinatorEntityDTO convertCoordinatorToDTO(CoordinatorEntity coordinator) {
         if (coordinator == null) {
             return null;
@@ -347,17 +350,27 @@ public class EventServiceImpl implements EventService {
                 : ex.getMessage();
 
         if (message != null && message.contains("uk_event_cover")) {
+            String coverIdMessage = event.getCover() != null
+                    ? " with id - " + event.getCover().getCoverId()
+                    : "";
+
             return new CoverAlreadyExistsException(
-                    "cover with id - " + event.getCover().getCoverId() + " is already used by another event"
+                    "cover" + coverIdMessage + " is already used by another event"
             );
         }
 
+
         if (message != null && message.contains("uk_event_location_datetime")) {
+            String locationIdMessage = event.getLocation() != null
+                    ? " with id - " + event.getLocation().getLocationId()
+                    : "";
+
             return new LocationAlreadyExistsException(
-                    "location with id - " + event.getLocation().getLocationId()
-                            + " is occupied in date - " + event.getDateTimestamp()
+                    "location" + locationIdMessage + " is occupied in date - "
+                            + event.getDateTimestamp()
             );
         }
+
 
         return ex;
     }

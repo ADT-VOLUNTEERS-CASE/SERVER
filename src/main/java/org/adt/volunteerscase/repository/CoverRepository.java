@@ -8,9 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface CoverRepository extends JpaRepository<CoverEntity, Integer> {
-    Optional<CoverEntity> findByCoverId(Integer coverId);
-
-    boolean existsByLink(String link);
-
-    Optional<CoverEntity> findByLink(String link);
+    Optional<CoverEntity> findByCoverIdAndDeletedAtIsNull(Integer coverId);
+    boolean existsByLinkAndDeletedAtIsNull(String link);
+    Optional<CoverEntity> findByLinkAndDeletedAtIsNull(String link);
 }

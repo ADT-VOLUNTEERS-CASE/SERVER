@@ -45,5 +45,7 @@ public class EventPatchRequest {
 
     private Boolean clearTags = false;
 
+    @Builder.Default
+    private Boolean clearCover = false;
 
 }

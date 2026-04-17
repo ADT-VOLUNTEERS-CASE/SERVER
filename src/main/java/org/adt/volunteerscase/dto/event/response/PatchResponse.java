@@ -4,6 +4,8 @@ import lombok.Builder;
 import lombok.Data;
 import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
 import org.adt.volunteerscase.entity.event.EventStatus;
+import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
+
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -16,7 +18,7 @@ public class PatchResponse {
     private EventStatus status;
     private String name;
     private String description;
-    private Integer coverId;
+    private CoverEntityDTO cover;
     private CoordinatorEntityDTO coordinator;
     private Integer maxCapacity;
     private LocalDateTime dateTimestamp;

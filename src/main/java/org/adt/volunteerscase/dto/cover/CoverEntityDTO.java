@@ -10,10 +10,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CoverEntityDTO {
-
     private Integer coverId;
     private String link;
-    private Integer width;
-    private Integer height;
+    private Long createdAt;
+    private Long deletedAt;
+    private CoverMetadataDTO fileMetadata;
 }
+
 

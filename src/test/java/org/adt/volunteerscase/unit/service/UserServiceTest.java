@@ -6,6 +6,8 @@ import org.adt.volunteerscase.dto.user.response.GetUserResponse;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.UserEventEntity;
+import org.adt.volunteerscase.entity.event.EventEntity;
+import org.adt.volunteerscase.entity.event.EventStatus;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.exception.CoordinatorInUseException;
 import org.adt.volunteerscase.exception.CoordinatorNotFoundException;
@@ -29,6 +31,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -118,6 +121,8 @@ public class UserServiceTest {
         when(coordinatorRepository.findById(1)).thenReturn(Optional.of(coordinatorEntity));
         when(userRepository.existsByEmail("maria@example.com")).thenReturn(false);
         when(userRepository.existsByPhoneNumber("+79990001122")).thenReturn(false);
+        when(userEventRepository.findActiveUpcomingEventsByUserId(eq(1), any(LocalDateTime.class)))
+                .thenReturn(List.of());
 
         GetUserResponse response = userService.updateCoordinatorById(request, 1);
 
@@ -138,6 +143,7 @@ public class UserServiceTest {
         assertThat(response.isCoordinator()).isTrue();
         assertThat(response.isAdmin()).isFalse();
         assertThat(response.getWorkLocation()).isEqualTo("Main office");
+        assertThat(response.getEvents()).isEmpty();
         assertThat(response.getTags()).containsExactlyInAnyOrder(
                 TagEntityDTO.builder()
                         .tagId(10)
@@ -151,7 +157,8 @@ public class UserServiceTest {
         verify(userRepository).existsByPhoneNumber("+79990001122");
         verify(userRepository).save(coordinatorUser);
         verify(coordinatorRepository).save(coordinatorEntity);
-        verifyNoInteractions(eventRepository, refreshTokenService, userEventRepository);
+        verify(userEventRepository).findActiveUpcomingEventsByUserId(eq(1), any(LocalDateTime.class));
+        verifyNoInteractions(eventRepository, refreshTokenService);
     }
 
     @Test
@@ -241,6 +248,8 @@ public class UserServiceTest {
         when(userRepository.findByEmailAndDeletedAtIsNull("coordinator@example.com"))
                 .thenReturn(Optional.of(coordinatorUser));
         when(coordinatorRepository.findById(1)).thenReturn(Optional.of(coordinatorEntity));
+        when(userEventRepository.findActiveUpcomingEventsByUserId(eq(1), any(LocalDateTime.class)))
+                .thenReturn(List.of());
 
         GetUserResponse response = userService.updateCoordinatorByEmail(request, "coordinator@example.com");
 
@@ -251,6 +260,7 @@ public class UserServiceTest {
 
         assertThat(response.getLastname()).isEqualTo("Новая фамилия");
         assertThat(response.getWorkLocation()).isEqualTo("Branch office");
+        assertThat(response.getEvents()).isEmpty();
 
         verify(userRepository).findByEmailAndDeletedAtIsNull("coordinator@example.com");
         verify(coordinatorRepository).findById(1);
@@ -258,6 +268,7 @@ public class UserServiceTest {
         verify(userRepository, never()).existsByPhoneNumber(anyString());
         verify(userRepository).save(coordinatorUser);
         verify(coordinatorRepository).save(coordinatorEntity);
+        verify(userEventRepository).findActiveUpcomingEventsByUserId(eq(1), any(LocalDateTime.class));
     }
 
     @Test
@@ -334,9 +345,17 @@ public class UserServiceTest {
         UserEntity currentUser = UserEntity.builder()
                 .userId(1)
                 .build();
+        EventEntity activeUpcomingEvent = EventEntity.builder()
+                .eventId(50)
+                .name("Volunteer Meetup")
+                .status(EventStatus.IN_PROGRESS)
+                .dateTimestamp(LocalDateTime.of(2026, 5, 10, 18, 0))
+                .build();
 
         when(userRepository.findByUserIdAndDeletedAtIsNull(1)).thenReturn(Optional.of(coordinatorUser));
         when(coordinatorRepository.findById(1)).thenReturn(Optional.of(coordinatorEntity));
+        when(userEventRepository.findActiveUpcomingEventsByUserId(eq(1), any(LocalDateTime.class)))
+                .thenReturn(List.of(activeUpcomingEvent));
 
         GetUserResponse response = userService.getCurrentUser(currentUser);
 
@@ -349,6 +368,10 @@ public class UserServiceTest {
         assertThat(response.isCoordinator()).isTrue();
         assertThat(response.isAdmin()).isFalse();
         assertThat(response.getWorkLocation()).isEqualTo("Old office");
+        assertThat(response.getEvents()).hasSize(1);
+        assertThat(response.getEvents().get(0).getEventId()).isEqualTo(50);
+        assertThat(response.getEvents().get(0).getName()).isEqualTo("Volunteer Meetup");
+        assertThat(response.getEvents().get(0).getStatus()).isEqualTo("IN_PROGRESS");
         assertThat(response.getTags()).containsExactlyInAnyOrder(
                 TagEntityDTO.builder()
                         .tagId(10)
@@ -358,6 +381,7 @@ public class UserServiceTest {
 
         verify(userRepository).findByUserIdAndDeletedAtIsNull(1);
         verify(coordinatorRepository).findById(1);
+        verify(userEventRepository).findActiveUpcomingEventsByUserId(eq(1), any(LocalDateTime.class));
     }
 
     @Test
@@ -367,6 +391,8 @@ public class UserServiceTest {
                 .build();
 
         when(userRepository.findByUserIdAndDeletedAtIsNull(2)).thenReturn(Optional.of(regularUser));
+        when(userEventRepository.findActiveUpcomingEventsByUserId(eq(2), any(LocalDateTime.class)))
+                .thenReturn(List.of());
 
         GetUserResponse response = userService.getCurrentUser(currentUser);
 
@@ -375,8 +401,10 @@ public class UserServiceTest {
         assertThat(response.isCoordinator()).isFalse();
         assertThat(response.getWorkLocation()).isNull();
         assertThat(response.getTags()).isEmpty();
+        assertThat(response.getEvents()).isEmpty();
 
         verify(userRepository).findByUserIdAndDeletedAtIsNull(2);
         verify(coordinatorRepository, never()).findById(anyInt());
+        verify(userEventRepository).findActiveUpcomingEventsByUserId(eq(2), any(LocalDateTime.class));
     }
 }

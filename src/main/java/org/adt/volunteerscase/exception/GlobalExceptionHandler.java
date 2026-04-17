@@ -8,6 +8,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -160,6 +161,38 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleCoordinatorInUseException(CoordinatorInUseException ex) {
         ErrorResponse errorResponse = new ErrorResponse("COORDINATOR_IN_USE", ex.getMessage(), LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(InvalidCoverFileException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCoverFileException(InvalidCoverFileException
+                                                                                 ex) {
+        ErrorResponse errorResponse = new ErrorResponse("INVALID_COVER_FILE", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(CoverUploadException.class)
+    public ResponseEntity<ErrorResponse> handleCoverUploadException(CoverUploadException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("COVER_UPLOAD_ERROR", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+
+    @ExceptionHandler(SimultaneouslyCleaningAndWritingCoverException.class)
+    public ResponseEntity<ErrorResponse> handleSimultaneouslyCleaningAndWritingCoverException(
+            SimultaneouslyCleaningAndWritingCoverException ex
+    ) {
+        ErrorResponse errorResponse = new
+                ErrorResponse("SIMULTANEOUSLY_CLEANING_AND_WRITING_COVER", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse>
+    handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("FILE_TOO_LARGE", "uploaded cover is too large", LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(errorResponse);
     }
 
 }

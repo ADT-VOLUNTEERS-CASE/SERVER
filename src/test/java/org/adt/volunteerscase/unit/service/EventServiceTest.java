@@ -1,5 +1,8 @@
 package org.adt.volunteerscase.unit.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.adt.volunteerscase.dto.cover.CoverMapper;
+import org.adt.volunteerscase.dto.cover.CoverMetadataDTO;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
 import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
@@ -15,12 +18,12 @@ import org.adt.volunteerscase.entity.event.EventStatus;
 import org.adt.volunteerscase.exception.CoverAlreadyExistsException;
 import org.adt.volunteerscase.exception.EventNotFoundException;
 import org.adt.volunteerscase.exception.LocationAlreadyExistsException;
+import org.adt.volunteerscase.exception.SimultaneouslyCleaningAndWritingCoverException;
 import org.adt.volunteerscase.exception.SimultaneouslyCleaningAndWritingTagsException;
 import org.adt.volunteerscase.repository.CoordinatorRepository;
 import org.adt.volunteerscase.repository.CoverRepository;
 import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.LocationRepository;
-import org.adt.volunteerscase.service.EventService;
 import org.adt.volunteerscase.service.TagService;
 import org.adt.volunteerscase.service.impl.EventServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +38,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -42,11 +46,13 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForClassTypes.tuple;
+import static org.assertj.core.groups.Tuple.tuple;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class EventServiceTest {
+class EventServiceTest {
 
     @Mock
     private EventRepository eventRepository;
@@ -63,7 +69,8 @@ public class EventServiceTest {
     @Mock
     private TagService tagService;
 
-    private EventService eventService;
+    private EventServiceImpl eventService;
+    private CoverMapper coverMapper;
     private LocalDateTime eventDate;
     private LocalDateTime updatedEventDate;
     private LocationEntity location;
@@ -75,12 +82,14 @@ public class EventServiceTest {
 
     @BeforeEach
     void setUp() {
+        coverMapper = new CoverMapper(new ObjectMapper());
         eventService = new EventServiceImpl(
                 eventRepository,
                 coverRepository,
                 locationRepository,
                 coordinatorRepository,
-                tagService
+                tagService,
+                coverMapper
         );
 
         eventDate = LocalDateTime.of(2026, 4, 20, 12, 0);
@@ -93,12 +102,14 @@ public class EventServiceTest {
                 .longitude(37.6173)
                 .build();
 
-        cover = CoverEntity.builder()
-                .coverId(5)
-                .link("https://example.com/covers/cover-1.jpg")
-                .width(1200)
-                .height(630)
-                .build();
+        cover = coverEntity(
+                5,
+                "https://example.com/covers/cover-1.jpg",
+                "cover-1.jpg",
+                1200,
+                630,
+                "covers/2026/04/cover-1.jpg"
+        );
 
         coordinator = CoordinatorEntity.builder()
                 .userId(1)
@@ -140,7 +151,7 @@ public class EventServiceTest {
     void createEvent_shouldSaveEvent_whenRequestIsValid() {
         when(locationRepository.findByLocationId(10)).thenReturn(Optional.of(location));
         when(eventRepository.existsByLocationAndDateTimestamp(location, eventDate)).thenReturn(false);
-        when(coverRepository.findByCoverId(5)).thenReturn(Optional.of(cover));
+        when(coverRepository.findByCoverIdAndDeletedAtIsNull(5)).thenReturn(Optional.of(cover));
         when(eventRepository.existsByCover(cover)).thenReturn(false);
         when(coordinatorRepository.findById(1)).thenReturn(Optional.of(coordinator));
         when(tagService.getTagEntities(Set.of(1))).thenReturn(Set.of(firstTag));
@@ -184,7 +195,7 @@ public class EventServiceTest {
     void createEvent_shouldMapDatabaseConstraintViolation_whenCoverIsAlreadyUsed() {
         when(locationRepository.findByLocationId(10)).thenReturn(Optional.of(location));
         when(eventRepository.existsByLocationAndDateTimestamp(location, eventDate)).thenReturn(false);
-        when(coverRepository.findByCoverId(5)).thenReturn(Optional.of(cover));
+        when(coverRepository.findByCoverIdAndDeletedAtIsNull(5)).thenReturn(Optional.of(cover));
         when(eventRepository.existsByCover(cover)).thenReturn(false);
         when(coordinatorRepository.findById(1)).thenReturn(Optional.of(coordinator));
         when(tagService.getTagEntities(Set.of(1))).thenReturn(Set.of(firstTag));
@@ -215,12 +226,14 @@ public class EventServiceTest {
                 .longitude(37.5927)
                 .build();
 
-        CoverEntity newCover = CoverEntity.builder()
-                .coverId(30)
-                .link("https://example.com/covers/new-cover.jpg")
-                .width(1920)
-                .height(1080)
-                .build();
+        CoverEntity newCover = coverEntity(
+                30,
+                "https://example.com/covers/new-cover.jpg",
+                "new-cover.jpg",
+                1920,
+                1080,
+                "covers/2026/04/new-cover.jpg"
+        );
 
         TagEntity secondTag = TagEntity.builder()
                 .tagId(2)
@@ -244,7 +257,7 @@ public class EventServiceTest {
         when(locationRepository.findByLocationId(20)).thenReturn(Optional.of(newLocation));
         when(eventRepository.existsByLocationAndDateTimestampAndEventIdNot(newLocation, updatedEventDate, 1))
                 .thenReturn(false);
-        when(coverRepository.findByCoverId(30)).thenReturn(Optional.of(newCover));
+        when(coverRepository.findByCoverIdAndDeletedAtIsNull(30)).thenReturn(Optional.of(newCover));
         when(eventRepository.existsByCoverAndEventIdNot(newCover, 1)).thenReturn(false);
         when(tagService.getTagEntities(Set.of(2))).thenReturn(Set.of(secondTag));
         when(eventRepository.saveAndFlush(any(EventEntity.class)))
@@ -266,7 +279,9 @@ public class EventServiceTest {
         assertThat(response.getName()).isEqualTo("Updated Event");
         assertThat(response.getDescription()).isEqualTo("Updated description");
         assertThat(response.getStatus()).isEqualTo(EventStatus.COMPLETED);
-        assertThat(response.getCoverId()).isEqualTo(30);
+        assertThat(response.getCover().getCoverId()).isEqualTo(30);
+        assertThat(response.getCover().getFileMetadata().getWidth()).isEqualTo(1920);
+        assertThat(response.getCover().getFileMetadata().getHeight()).isEqualTo(1080);
         assertThat(response.getCoordinator().getUserId()).isEqualTo(2);
         assertThat(response.getCoordinator().getWorkLocation()).isEqualTo("Branch office");
         assertThat(response.getMaxCapacity()).isEqualTo(200);
@@ -277,6 +292,25 @@ public class EventServiceTest {
 
         verify(tagService).getTagEntities(Set.of(2));
         verify(eventRepository).saveAndFlush(existingEvent);
+    }
+
+    @Test
+    void patchEvent_shouldClearCover_whenRequested() {
+        EventPatchRequest request = EventPatchRequest.builder()
+                .clearCover(true)
+                .build();
+
+        when(eventRepository.findByEventId(1)).thenReturn(Optional.of(existingEvent));
+        when(eventRepository.saveAndFlush(any(EventEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        PatchResponse response = eventService.patchEvent(1, request);
+
+        assertThat(existingEvent.getCover()).isNull();
+        assertThat(response.getCover()).isNull();
+
+        verify(eventRepository).saveAndFlush(existingEvent);
+        verifyNoInteractions(coverRepository, locationRepository, coordinatorRepository, tagService);
     }
 
     @Test
@@ -306,6 +340,24 @@ public class EventServiceTest {
 
         verify(eventRepository).findByEventId(1);
         verify(tagService, never()).getTagEntities(anySet());
+        verify(eventRepository, never()).saveAndFlush(any(EventEntity.class));
+    }
+
+    @Test
+    void patchEvent_shouldThrowException_whenClearCoverAndCoverIdAreUsedTogether() {
+        EventPatchRequest request = EventPatchRequest.builder()
+                .clearCover(true)
+                .coverId(30)
+                .build();
+
+        when(eventRepository.findByEventId(1)).thenReturn(Optional.of(existingEvent));
+
+        assertThatThrownBy(() -> eventService.patchEvent(1, request))
+                .isInstanceOf(SimultaneouslyCleaningAndWritingCoverException.class)
+                .hasMessage("clearCover and coverId cannot be used together");
+
+        verify(eventRepository).findByEventId(1);
+        verify(coverRepository, never()).findByCoverIdAndDeletedAtIsNull(anyInt());
         verify(eventRepository, never()).saveAndFlush(any(EventEntity.class));
     }
 
@@ -405,6 +457,7 @@ public class EventServiceTest {
         assertThat(eventResponse.getDescription()).isEqualTo("Old description");
         assertThat(eventResponse.getCover().getCoverId()).isEqualTo(5);
         assertThat(eventResponse.getCover().getLink()).isEqualTo("https://example.com/covers/cover-1.jpg");
+        assertThat(eventResponse.getCover().getFileMetadata().getWidth()).isEqualTo(1200);
         assertThat(eventResponse.getCoordinator().getUserId()).isEqualTo(1);
         assertThat(eventResponse.getCoordinator().getWorkLocation()).isEqualTo("Main office");
         assertThat(eventResponse.getMaxCapacity()).isEqualTo(50);
@@ -416,5 +469,33 @@ public class EventServiceTest {
                 .containsExactly(tuple(1, "animals"));
 
         verify(eventRepository).findAllByOrderByDateTimestampDesc(pageable);
+    }
+
+    private CoverEntity coverEntity(
+            Integer coverId,
+            String link,
+            String originalFileName,
+            Integer width,
+            Integer height,
+            String objectKey
+    ) {
+        return CoverEntity.builder()
+                .coverId(coverId)
+                .link(link)
+                .metadata(coverMapper.encodeMetadata(
+                        CoverMetadataDTO.builder()
+                                .originalFileName(originalFileName)
+                                .contentType("image/jpeg")
+                                .size(1024L)
+                                .width(width)
+                                .height(height)
+                                .bucket("covers")
+                                .objectKey(objectKey)
+                                .eTag("etag-" + coverId)
+                                .build()
+                ))
+                .createdAt(Instant.now().toEpochMilli())
+                .deletedAt(null)
+                .build();
     }
 }

@@ -13,8 +13,11 @@ import org.adt.volunteerscase.dto.cover.request.CoverPatchRequest;
 import org.adt.volunteerscase.dto.cover.response.CoverResponse;
 import org.adt.volunteerscase.service.CoverService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 @RestController
 @RequestMapping("api/v1/cover")
@@ -24,48 +27,72 @@ public class CoverController {
     private final CoverService coverService;
 
     @Operation(
-            summary = "эндпоинт для создания обложки",
+            summary = "загрузка новой обложки",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation =
+                                    CoverCreateRequest.class)
+                    )
+            ),
             responses = {
                     @ApiResponse(responseCode = "201", description = "успешно создано"),
-                    @ApiResponse(responseCode = "400", description = "Невалидные данные", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    @ApiResponse(responseCode = "400", description = "невалидный файл", content
+                            = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "413", description = "файл слишком большой для загрузки", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "ошибка загрузки файла в s3", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")
-    @PostMapping("/create")
-    public ResponseEntity<?> createCover(@Valid @RequestBody CoverCreateRequest request) {
-        coverService.coverCreateRequest(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    @PostMapping(value = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CoverResponse> createCover(@Valid @ModelAttribute CoverCreateRequest
+                                                             request) {
+        return
+                ResponseEntity.status(HttpStatus.CREATED).body(coverService.createCover(request));
     }
 
     @Operation(
-            summary = "обновление полей обложки",
+            summary = "замена файла обложки",
+            requestBody = @RequestBody(
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation =
+                                    CoverPatchRequest.class)
+                    )
+            ),
             responses = {
                     @ApiResponse(responseCode = "200", description = "успешно обновлено"),
                     @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-                    @ApiResponse(responseCode = "400", description = "некорректный формат json или некорректное заполнение полей json", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    @ApiResponse(responseCode = "400", description = "невалидный файл", content
+                            = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "413", description = "файл слишком большой для загрузки", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "ошибка загрузки файла в s3", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
+
     @SecurityRequirement(name = "jwtAuth")
-    @PatchMapping("/{coverId}")
-    public ResponseEntity<?> updateCover(
+    @PatchMapping(value = "/{coverId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CoverResponse> updateCover(
             @PathVariable Integer coverId,
-            @Valid @RequestBody CoverPatchRequest request
+            @Valid @ModelAttribute CoverPatchRequest request
     ) {
-        return ResponseEntity.ok().body(coverService.updateCover(request, coverId));
+        return ResponseEntity.ok(coverService.updateCover(request, coverId));
     }
 
     @Operation(
             summary = "удаление обложки",
             responses = {
                     @ApiResponse(responseCode = "204", description = "успешно удалено"),
-                    @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "409", description = "обложка используется мероприятием", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "500", description = "ошибка удаления файла из s3", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
             }
     )
     @SecurityRequirement(name = "jwtAuth")
     @DeleteMapping("/{coverId}")
-    public ResponseEntity<?> deleteCoverById(
-            @PathVariable Integer coverId
-    ) {
+    public ResponseEntity<Void> deleteCoverById(@PathVariable Integer coverId) {
         coverService.deleteCoverById(coverId);
         return ResponseEntity.noContent().build();
     }
@@ -73,15 +100,13 @@ public class CoverController {
     @Operation(
             summary = "получение обложки по id",
             responses = {
-                    @ApiResponse(responseCode = "200", description = "успешно"),
-                    @ApiResponse(responseCode = "404", description = "обложки с таким id не найдены", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+                    @ApiResponse(responseCode = "404", description = "обложка с таким id не найдена", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "200", description = "успешно")
             }
     )
     @SecurityRequirement(name = "jwtAuth")
     @GetMapping("/{coverId}")
-    public ResponseEntity<CoverResponse> getCoverById(
-            @PathVariable Integer coverId
-    ) {
-        return ResponseEntity.ok().body(coverService.getCoverById(coverId));
+    public ResponseEntity<CoverResponse> getCoverById(@PathVariable Integer coverId) {
+        return ResponseEntity.ok(coverService.getCoverById(coverId));
     }
 }
