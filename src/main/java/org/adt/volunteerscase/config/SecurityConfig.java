@@ -54,6 +54,8 @@ public class SecurityConfig {
                                 .requestMatchers("/api/v1/coordinatorping", "/api/v1/cover/create", "/api/v1/tag/create", "/api/v1/event/update/**", "/api/v1/event/create", "/api/v1/event/delete/**").hasAuthority("ROLE_COORDINATOR")
                                 .requestMatchers("/api/v1/location/create", "/api/v1/location/update/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_COORDINATOR")
 
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/user-event/update/status/**").hasAuthority("ROLE_COORDINATOR")
+
                                 .requestMatchers(HttpMethod.GET, "/api/v1/tag/id/**", "/api/v1/tag/name/**").authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/tag/id/**", "/api/v1/tag/name/**").hasAuthority("ROLE_COORDINATOR")
                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/tag/**").hasAuthority("ROLE_COORDINATOR")

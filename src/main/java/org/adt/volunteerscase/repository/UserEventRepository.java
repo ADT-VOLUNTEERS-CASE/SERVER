@@ -26,22 +26,24 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
 
     boolean existsByUserAndEventAndDeletedAtIsNull(UserEntity user, EventEntity event);
 
+    long countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(EventEntity event);
+
+    long countByEventAndDeletedAtIsNullAndAcceptedTrueAndRevokedFalse(EventEntity event);
+
     @Query("""
-          SELECT e
-          FROM UserEventEntity ue
-          JOIN ue.event e
-          WHERE ue.user.userId = :userId
-            AND ue.deletedAt IS NULL
-            AND ue.revoked = false
-            AND ue.rejected = false
-            AND e.dateTimestamp > :now
-            AND e.status <> org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
-          ORDER BY e.dateTimestamp ASC, e.eventId ASC
-          """)
+            SELECT e
+            FROM UserEventEntity ue
+            JOIN ue.event e
+            WHERE ue.user.userId = :userId
+              AND ue.deletedAt IS NULL
+              AND ue.revoked = false
+              AND ue.rejected = false
+              AND e.dateTimestamp > :now
+              AND e.status <> org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
+            ORDER BY e.dateTimestamp ASC, e.eventId ASC
+            """)
     List<EventEntity> findActiveUpcomingEventsByUserId(
             @Param("userId") Integer userId,
             @Param("now") LocalDateTime now
     );
-
 }
-

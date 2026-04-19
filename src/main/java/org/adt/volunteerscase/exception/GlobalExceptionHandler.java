@@ -195,4 +195,43 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(errorResponse);
     }
 
+    @ExceptionHandler(UserEventNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleUserEventNotFoundException(UserEventNotFoundException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("USER_EVENT_NOT_FOUND", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(UserEventAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse>
+    handleUserEventAlreadyExistsException(UserEventAlreadyExistsException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("USER_EVENT_ALREADY_EXISTS", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(UserEventAccessDeniedException.class)
+    public ResponseEntity<ErrorResponse>
+    handleUserEventAccessDeniedException(UserEventAccessDeniedException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("USER_EVENT_ACCESS_DENIED", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ExceptionHandler(UserEventStateConflictException.class)
+    public ResponseEntity<ErrorResponse>
+    handleUserEventStateConflictException(UserEventStateConflictException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("USER_EVENT_STATE_CONFLICT", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+    @ExceptionHandler(EventCapacityExceededException.class)
+    public ResponseEntity<ErrorResponse>
+    handleEventCapacityExceededException(EventCapacityExceededException ex) {
+        ErrorResponse errorResponse = new ErrorResponse("EVENT_CAPACITY_EXCEEDED", ex.getMessage(),
+                LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
 }
