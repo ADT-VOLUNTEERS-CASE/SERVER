@@ -22,6 +22,6 @@ public class UserEventStatusPatchRequest {
     private String status;
 
     @Size(max = 1000, message = "reject reason max length is 1000")
-    @Pattern(regexp = ".*\\S.*", message = "reject reason must not be blank")
+    @Pattern(regexp = "(?s).*\\S.*", message = "reject reason must not be blank")
     private String rejectReason;
 }

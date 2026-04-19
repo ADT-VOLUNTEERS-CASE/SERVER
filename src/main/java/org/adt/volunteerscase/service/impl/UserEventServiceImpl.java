@@ -58,6 +58,7 @@ public class UserEventServiceImpl implements UserEventService {
 
         LocalDateTime now = LocalDateTime.now();
 
+        boolean isNew = existingOptional.isEmpty();
         UserEventEntity userEvent = existingOptional.orElseGet(() -> UserEventEntity.builder()
                 .id(UserEventId.builder()
                         .userId(user.getUserId())
@@ -67,7 +68,7 @@ public class UserEventServiceImpl implements UserEventService {
                 .event(event)
                 .build());
 
-        moveToPending(userEvent, now);
+        moveToPending(userEvent, isNew ? now : userEvent.getCreatedAt());
 
         UserEventEntity savedUserEvent = userEventRepository.save(userEvent);
         return convertToResponse(savedUserEvent);
@@ -127,7 +128,7 @@ public class UserEventServiceImpl implements UserEventService {
     }
 
     private EventEntity getEvent(Integer eventId) {
-        return eventRepository.findByEventId(eventId)
+        return eventRepository.findByEventIdForUpdate(eventId)
                 .orElseThrow(() -> new EventNotFoundException("event with id - " + eventId + " not found"));
     }
 

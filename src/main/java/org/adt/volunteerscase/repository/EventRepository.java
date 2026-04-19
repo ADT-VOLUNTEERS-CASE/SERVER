@@ -1,5 +1,6 @@
 package org.adt.volunteerscase.repository;
 
+import jakarta.persistence.LockModeType;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -99,9 +101,12 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
             Pageable pageable
     );
 
-    @EntityGraph(attributePaths = {"cover", "coordinator", "location", "tags"})
+    @EntityGraph(attributePaths = {"cover", "coordinator", "location", "tags" })
     @Query("SELECT DISTINCT e FROM EventEntity e WHERE e.eventId IN :eventIds")
     List<EventEntity> findDetailedByEventIdIn(@Param("eventIds") Collection<Integer> eventIds);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from EventEntity e where e.eventId = :eventId")
+    Optional<EventEntity> findByEventIdForUpdate(@Param("eventId") Integer eventId);
 
 }

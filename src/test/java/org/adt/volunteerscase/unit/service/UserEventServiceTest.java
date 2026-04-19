@@ -11,6 +11,7 @@ import org.adt.volunteerscase.entity.user.UserEntity;
 import org.adt.volunteerscase.exception.EventCapacityExceededException;
 import org.adt.volunteerscase.exception.UserEventAccessDeniedException;
 import org.adt.volunteerscase.exception.UserEventAlreadyExistsException;
+import org.adt.volunteerscase.exception.UserEventStateConflictException;
 import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.UserEventRepository;
 import org.adt.volunteerscase.repository.UserRepository;
@@ -109,7 +110,7 @@ class UserEventServiceTest {
     @Test
     void createApplication_shouldSavePendingApplication_whenEventHasCapacity() {
         when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
         when(userEventRepository.findByUserAndEvent(applicant, event)).thenReturn(Optional.empty());
         when(userEventRepository.countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event))
                 .thenReturn(1L);
@@ -140,7 +141,7 @@ class UserEventServiceTest {
     @Test
     void createApplication_shouldThrowException_whenActiveApplicationAlreadyExists() {
         when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
         when(userEventRepository.findByUserAndEvent(applicant,
                 event)).thenReturn(Optional.of(pendingApplication));
 
@@ -156,7 +157,7 @@ class UserEventServiceTest {
     @Test
     void createApplication_shouldReopenRejectedApplicationAsPending() {
         when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
         when(userEventRepository.findByUserAndEvent(applicant,
                 event)).thenReturn(Optional.of(rejectedApplication));
         when(userEventRepository.countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event))
@@ -182,7 +183,7 @@ class UserEventServiceTest {
     @Test
     void createApplication_shouldThrowException_whenCapacityIsReached() {
         when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
         when(userEventRepository.findByUserAndEvent(applicant, event)).thenReturn(Optional.empty());
         when(userEventRepository.countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event))
                 .thenReturn(2L);
@@ -200,7 +201,7 @@ class UserEventServiceTest {
                 .status("ACCEPTED")
                 .build();
 
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
         when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
         when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
                 .thenReturn(Optional.of(pendingApplication));
@@ -232,7 +233,7 @@ class UserEventServiceTest {
                 .rejectReason("No available slots")
                 .build();
 
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
         when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
         when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
                 .thenReturn(Optional.of(pendingApplication));
@@ -262,7 +263,7 @@ class UserEventServiceTest {
                 .status("ACCEPTED")
                 .build();
 
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
 
         assertThatThrownBy(() -> userEventService.updateApplicationStatus(20, 10, request, 77))
                 .isInstanceOf(UserEventAccessDeniedException.class)
@@ -278,7 +279,7 @@ class UserEventServiceTest {
                 .status("ACCEPTED")
                 .build();
 
-        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
         when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
         when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
                 .thenReturn(Optional.of(pendingApplication));
@@ -290,5 +291,144 @@ class UserEventServiceTest {
                 .hasMessage("event with id - 20 has reached max capacity - 2");
 
         verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void createApplication_shouldThrowException_whenEventDoesNotAcceptApplications() {
+        event.setStatus(EventStatus.COMPLETED);
+
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> userEventService.createApplication(20, 10))
+                .isInstanceOf(UserEventStateConflictException.class)
+                .hasMessage("event with id - 20 does not accept applications");
+
+        verify(userEventRepository, never()).findByUserAndEvent(any(), any());
+        verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void updateApplicationStatus_shouldThrowException_whenApplicationIsRevoked() {
+        pendingApplication.setRevoked(true);
+        pendingApplication.setRevokedAt(LocalDateTime.now().minusHours(1));
+
+        UserEventStatusPatchRequest request = UserEventStatusPatchRequest.builder()
+                .status("ACCEPTED")
+                .build();
+
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.of(pendingApplication));
+
+        assertThatThrownBy(() -> userEventService.updateApplicationStatus(20, 10, request, 99))
+                .isInstanceOf(UserEventStateConflictException.class)
+                .hasMessage("application for user id - 10 and event id - 20 is revoked and cannot be updated");
+
+        verify(userEventRepository, never()).countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event);
+        verify(userEventRepository, never()).countByEventAndDeletedAtIsNullAndAcceptedTrueAndRevokedFalse(event);
+        verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void updateApplicationStatus_shouldThrowException_whenStatusIsUnsupported() {
+        UserEventStatusPatchRequest request = UserEventStatusPatchRequest.builder()
+                .status("PENDING")
+                .build();
+
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.of(pendingApplication));
+
+        assertThatThrownBy(() -> userEventService.updateApplicationStatus(20, 10, request, 99))
+                .isInstanceOf(UserEventStateConflictException.class)
+                .hasMessage("unsupported application status - PENDING");
+
+        verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void updateApplicationStatus_shouldThrowException_whenEventDoesNotAcceptApplicationsForAccept() {
+        event.setDateTimestamp(LocalDateTime.now().minusMinutes(1));
+
+        UserEventStatusPatchRequest request = UserEventStatusPatchRequest.builder()
+                .status("ACCEPTED")
+                .build();
+
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.of(pendingApplication));
+
+        assertThatThrownBy(() -> userEventService.updateApplicationStatus(20, 10, request, 99))
+                .isInstanceOf(UserEventStateConflictException.class)
+                .hasMessage("event with id - 20 does not accept applications");
+
+        verify(userEventRepository, never()).countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event);
+        verify(userEventRepository, never()).countByEventAndDeletedAtIsNullAndAcceptedTrueAndRevokedFalse(event);
+        verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void updateApplicationStatus_shouldAcceptPreviouslyRejectedApplication_whenCapacityAllows() {
+        UserEventStatusPatchRequest request = UserEventStatusPatchRequest.builder()
+                .status("ACCEPTED")
+                .build();
+
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.of(rejectedApplication));
+        when(userEventRepository.countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event))
+                .thenReturn(1L);
+        when(userEventRepository.countByEventAndDeletedAtIsNullAndAcceptedTrueAndRevokedFalse(event))
+                .thenReturn(0L);
+        when(userEventRepository.save(any(UserEventEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserEventResponse response = userEventService.updateApplicationStatus(20, 10, request, 99);
+
+        assertThat(response.getStatus()).isEqualTo("ACCEPTED");
+        assertThat(response.getRejectReason()).isNull();
+        assertThat(response.getRejectedAt()).isNull();
+
+        assertThat(rejectedApplication.isAccepted()).isTrue();
+        assertThat(rejectedApplication.isRejected()).isFalse();
+        assertThat(rejectedApplication.getRejectReason()).isNull();
+        assertThat(rejectedApplication.getRejectedAt()).isNull();
+
+        verify(userEventRepository).countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event);
+        verify(userEventRepository).countByEventAndDeletedAtIsNullAndAcceptedTrueAndRevokedFalse(event);
+        verify(userEventRepository).save(rejectedApplication);
+    }
+
+    @Test
+    void updateApplicationStatus_shouldRejectApplicationWithNullReason_whenReasonIsNotProvided() {
+        UserEventStatusPatchRequest request = UserEventStatusPatchRequest.builder()
+                .status("REJECTED")
+                .build();
+
+        when(eventRepository.findByEventIdForUpdate(20)).thenReturn(Optional.of(event));
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.of(pendingApplication));
+        when(userEventRepository.save(any(UserEventEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        UserEventResponse response = userEventService.updateApplicationStatus(20, 10, request, 99);
+
+        assertThat(response.getStatus()).isEqualTo("REJECTED");
+        assertThat(response.getRejectReason()).isNull();
+        assertThat(response.getRejectedAt()).isNotNull();
+
+        assertThat(pendingApplication.isAccepted()).isFalse();
+        assertThat(pendingApplication.isRejected()).isTrue();
+        assertThat(pendingApplication.getRejectReason()).isNull();
+
+        verify(userEventRepository, never()).countByEventAndDeletedAtIsNullAndRejectedFalseAndRevokedFalse(event);
+        verify(userEventRepository, never()).countByEventAndDeletedAtIsNullAndAcceptedTrueAndRevokedFalse(event);
+        verify(userEventRepository).save(pendingApplication);
     }
 }
