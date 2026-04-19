@@ -244,13 +244,22 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<GetAllResponse> searchEvents(EventSearchRequest request, Pageable pageable) {
-        Page<EventEntity> eventPage = eventRepository.searchByName(request.getName(), pageable);
+        String escapedName = escapeLikePattern(request.getName());
+
+        Page<EventEntity> eventPage = eventRepository.searchByName(escapedName, pageable);
 
         List<GetAllResponse> content = eventPage.getContent().stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
 
         return PageResponse.of(new PageImpl<>(content, pageable, eventPage.getTotalElements()));
+    }
+
+    private String escapeLikePattern(String value) {
+        return value.trim()
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 
     @Override
