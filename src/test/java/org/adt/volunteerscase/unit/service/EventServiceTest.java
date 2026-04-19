@@ -5,6 +5,7 @@ import org.adt.volunteerscase.dto.cover.CoverMapper;
 import org.adt.volunteerscase.dto.cover.CoverMetadataDTO;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
+import org.adt.volunteerscase.dto.event.request.EventSearchRequest;
 import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
 import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
@@ -497,5 +498,71 @@ class EventServiceTest {
                 .createdAt(Instant.now().toEpochMilli())
                 .deletedAt(null)
                 .build();
+    }
+
+    @Test
+    void searchEvents_shouldReturnMappedPageResponse() {
+        EventSearchRequest request = EventSearchRequest.builder()
+                .name("Old")
+                .build();
+
+        Pageable pageable = PageRequest.of(0, 1);
+        Page<EventEntity> eventPage = new PageImpl<>(List.of(existingEvent), pageable, 2);
+
+        when(eventRepository.searchByName("Old", pageable)).thenReturn(eventPage);
+
+        PageResponse<GetAllResponse> response = eventService.searchEvents(request, pageable);
+
+        assertThat(response.getContent()).hasSize(1);
+        assertThat(response.getPageNumber()).isEqualTo(0);
+        assertThat(response.getPageSize()).isEqualTo(1);
+        assertThat(response.getTotalElements()).isEqualTo(2);
+        assertThat(response.getTotalPages()).isEqualTo(2);
+        assertThat(response.isFirst()).isTrue();
+        assertThat(response.isLast()).isFalse();
+
+        GetAllResponse eventResponse = response.getContent().get(0);
+        assertThat(eventResponse.getEventId()).isEqualTo(1);
+        assertThat(eventResponse.getStatus()).isEqualTo(EventStatus.ONGOING);
+        assertThat(eventResponse.getName()).isEqualTo("Old Event");
+        assertThat(eventResponse.getDescription()).isEqualTo("Old description");
+        assertThat(eventResponse.getCover().getCoverId()).isEqualTo(5);
+        assertThat(eventResponse.getCover().getLink()).isEqualTo("https://example.com/covers/cover-1.jpg");
+        assertThat(eventResponse.getCover().getFileMetadata().getWidth()).isEqualTo(1200);
+        assertThat(eventResponse.getCoordinator().getUserId()).isEqualTo(1);
+        assertThat(eventResponse.getCoordinator().getWorkLocation()).isEqualTo("Main office");
+        assertThat(eventResponse.getMaxCapacity()).isEqualTo(50);
+        assertThat(eventResponse.getDateTimestamp()).isEqualTo(eventDate);
+        assertThat(eventResponse.getLocation().getLocationId()).isEqualTo(10);
+        assertThat(eventResponse.getLocation().getAddress()).isEqualTo("Moscow, Tverskaya 1");
+        assertThat(eventResponse.getTags())
+                .extracting("tagId", "tagName")
+                .containsExactly(tuple(1, "animals"));
+
+        verify(eventRepository).searchByName("Old", pageable);
+    }
+
+    @Test
+    void searchEvents_shouldReturnEmptyPage_whenNothingFound() {
+        EventSearchRequest request = EventSearchRequest.builder()
+                .name("Missing")
+                .build();
+
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<EventEntity> eventPage = Page.empty(pageable);
+
+        when(eventRepository.searchByName("Missing", pageable)).thenReturn(eventPage);
+
+        PageResponse<GetAllResponse> response = eventService.searchEvents(request, pageable);
+
+        assertThat(response.getContent()).isEmpty();
+        assertThat(response.getPageNumber()).isEqualTo(0);
+        assertThat(response.getPageSize()).isEqualTo(10);
+        assertThat(response.getTotalElements()).isEqualTo(0);
+        assertThat(response.getTotalPages()).isEqualTo(0);
+        assertThat(response.isFirst()).isTrue();
+        assertThat(response.isLast()).isTrue();
+
+        verify(eventRepository).searchByName("Missing", pageable);
     }
 }
