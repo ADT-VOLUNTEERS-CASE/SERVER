@@ -38,18 +38,16 @@ public class UserEventServiceImpl implements UserEventService {
     @Transactional
     public UserEventResponse createApplication(Integer eventId, Integer currentUserId) {
         UserEntity user = getActiveUser(currentUserId);
-        EventEntity event = getEvent(eventId);
+        EventEntity event = getEventForUpdate(eventId);
 
         validateEventAcceptsApplications(event);
 
-        Optional<UserEventEntity> existingOptional = userEventRepository.findByUserAndEvent(user,
-                event);
+        Optional<UserEventEntity> existingOptional = userEventRepository.findByUserAndEvent(user, event);
         if (existingOptional.isPresent()) {
             UserEventEntity existing = existingOptional.get();
             if (isActiveApplication(existing)) {
                 throw new UserEventAlreadyExistsException(
-                        "active application for user id - " + currentUserId + " and event id - " +
-                                eventId + " already exists"
+                        "active application for user id - " + currentUserId + " and event id - " + eventId + " already exists"
                 );
             }
         }
@@ -82,12 +80,11 @@ public class UserEventServiceImpl implements UserEventService {
             UserEventStatusPatchRequest request,
             Integer currentCoordinatorId
     ) {
-        EventEntity event = getEvent(eventId);
+        EventEntity event = getEventForUpdate(eventId);
         ensureCoordinatorOwnsEvent(event, currentCoordinatorId);
 
         UserEntity user = getActiveUser(userId);
-        UserEventEntity userEvent = userEventRepository.findByUserAndEventAndDeletedAtIsNull(user,
-                        event)
+        UserEventEntity userEvent = userEventRepository.findByUserAndEventAndDeletedAtIsNull(user, event)
                 .orElseThrow(() -> new UserEventNotFoundException(
                         "application for user id - " + userId + " and event id - " + eventId + " not found"
                 ));
@@ -122,19 +119,37 @@ public class UserEventServiceImpl implements UserEventService {
         return convertToResponse(savedUserEvent);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserEventResponse getMyApplicationStatus(Integer eventId, Integer currentUserId) {
+        UserEntity user = getActiveUser(currentUserId);
+        EventEntity event = getEvent(eventId);
+
+        UserEventEntity userEvent = userEventRepository.findByUserAndEventAndDeletedAtIsNull(user, event)
+                .orElseThrow(() -> new UserEventNotFoundException(
+                        "application for user id - " + currentUserId + " and event id - " + eventId + " not found"
+                ));
+
+        return convertToResponse(userEvent);
+    }
+
     private UserEntity getActiveUser(Integer userId) {
         return userRepository.findByUserIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new UserNotFoundException("user with id - " + userId + " not found"));
     }
 
     private EventEntity getEvent(Integer eventId) {
+        return eventRepository.findByEventId(eventId)
+                .orElseThrow(() -> new EventNotFoundException("event with id - " + eventId + " not found"));
+    }
+
+    private EventEntity getEventForUpdate(Integer eventId) {
         return eventRepository.findByEventIdForUpdate(eventId)
                 .orElseThrow(() -> new EventNotFoundException("event with id - " + eventId + " not found"));
     }
 
     private void validateEventAcceptsApplications(EventEntity event) {
-        if (event.getStatus() == EventStatus.COMPLETED || !
-                event.getDateTimestamp().isAfter(LocalDateTime.now())) {
+        if (event.getStatus() == EventStatus.COMPLETED || !event.getDateTimestamp().isAfter(LocalDateTime.now())) {
             throw new UserEventStateConflictException(
                     "event with id - " + event.getEventId() + " does not accept applications"
             );
@@ -163,8 +178,7 @@ public class UserEventServiceImpl implements UserEventService {
 
         if (activeApplications >= event.getMaxCapacity()) {
             throw new EventCapacityExceededException(
-                    "event with id - " + event.getEventId() + " has reached max capacity - " +
-                            event.getMaxCapacity()
+                    "event with id - " + event.getEventId() + " has reached max capacity - " + event.getMaxCapacity()
             );
         }
     }
@@ -175,8 +189,7 @@ public class UserEventServiceImpl implements UserEventService {
 
         if (acceptedApplications >= event.getMaxCapacity()) {
             throw new EventCapacityExceededException(
-                    "event with id - " + event.getEventId() + " has reached max capacity - " +
-                            event.getMaxCapacity()
+                    "event with id - " + event.getEventId() + " has reached max capacity - " + event.getMaxCapacity()
             );
         }
     }

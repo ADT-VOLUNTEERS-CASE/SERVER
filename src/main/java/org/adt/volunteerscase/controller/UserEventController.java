@@ -70,4 +70,25 @@ public class UserEventController {
                 )
         );
     }
+
+    @Operation(
+            summary = "получение статуса своей заявки на мероприятие",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "статус заявки успешно получен"),
+                    @ApiResponse(responseCode = "404", description = "мероприятие или заявка не найдены", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @GetMapping("/status/{eventId}")
+    public ResponseEntity<UserEventResponse> getMyApplicationStatus(
+            @PathVariable Integer eventId,
+            @AuthenticationPrincipal UserDetailsImpl currentUser
+    ) {
+        return ResponseEntity.ok(
+                userEventService.getMyApplicationStatus(
+                        eventId,
+                        currentUser.getUser().getUserId()
+                )
+        );
+    }
 }

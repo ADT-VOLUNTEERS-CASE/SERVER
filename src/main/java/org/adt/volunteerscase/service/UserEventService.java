@@ -14,4 +14,6 @@ public interface UserEventService {
             UserEventStatusPatchRequest request,
             Integer currentCoordinatorId
     );
+
+    UserEventResponse getMyApplicationStatus(Integer eventId, Integer currentUserId);
 }

@@ -8,10 +8,7 @@ import org.adt.volunteerscase.entity.UserEventId;
 import org.adt.volunteerscase.entity.event.EventEntity;
 import org.adt.volunteerscase.entity.event.EventStatus;
 import org.adt.volunteerscase.entity.user.UserEntity;
-import org.adt.volunteerscase.exception.EventCapacityExceededException;
-import org.adt.volunteerscase.exception.UserEventAccessDeniedException;
-import org.adt.volunteerscase.exception.UserEventAlreadyExistsException;
-import org.adt.volunteerscase.exception.UserEventStateConflictException;
+import org.adt.volunteerscase.exception.*;
 import org.adt.volunteerscase.repository.EventRepository;
 import org.adt.volunteerscase.repository.UserEventRepository;
 import org.adt.volunteerscase.repository.UserRepository;
@@ -431,4 +428,58 @@ class UserEventServiceTest {
         verify(userEventRepository, never()).countByEventAndDeletedAtIsNullAndAcceptedTrueAndRevokedFalse(event);
         verify(userEventRepository).save(pendingApplication);
     }
+
+    @Test
+    void getMyApplicationStatus_shouldReturnPendingApplicationStatus() {
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.of(pendingApplication));
+
+        UserEventResponse response = userEventService.getMyApplicationStatus(20, 10);
+
+        assertThat(response.getUserId()).isEqualTo(10);
+        assertThat(response.getEventId()).isEqualTo(20);
+        assertThat(response.getStatus()).isEqualTo("PENDING");
+        assertThat(response.getRejectReason()).isNull();
+        assertThat(response.getCreatedAt()).isEqualTo(pendingApplication.getCreatedAt());
+
+        verify(userEventRepository).findByUserAndEventAndDeletedAtIsNull(applicant, event);
+        verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void getMyApplicationStatus_shouldReturnRejectedApplicationStatusWithReason() {
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.of(rejectedApplication));
+
+        UserEventResponse response = userEventService.getMyApplicationStatus(20, 10);
+
+        assertThat(response.getUserId()).isEqualTo(10);
+        assertThat(response.getEventId()).isEqualTo(20);
+        assertThat(response.getStatus()).isEqualTo("REJECTED");
+        assertThat(response.getRejectReason()).isEqualTo("old reason");
+        assertThat(response.getRejectedAt()).isEqualTo(rejectedApplication.getRejectedAt());
+
+        verify(userEventRepository).findByUserAndEventAndDeletedAtIsNull(applicant, event);
+        verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void getMyApplicationStatus_shouldThrowException_whenApplicationNotFound() {
+        when(userRepository.findByUserIdAndDeletedAtIsNull(10)).thenReturn(Optional.of(applicant));
+        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(userEventRepository.findByUserAndEventAndDeletedAtIsNull(applicant, event))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userEventService.getMyApplicationStatus(20, 10))
+                .isInstanceOf(UserEventNotFoundException.class)
+                .hasMessage("application for user id - 10 and event id - 20 not found");
+
+        verify(userEventRepository).findByUserAndEventAndDeletedAtIsNull(applicant, event);
+        verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
 }
