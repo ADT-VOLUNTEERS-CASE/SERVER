@@ -5,6 +5,7 @@ import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
 import org.adt.volunteerscase.dto.cover.CoverMapper;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
+import org.adt.volunteerscase.dto.event.request.EventSearchRequest;
 import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
 import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
@@ -238,6 +239,27 @@ public class EventServiceImpl implements EventService {
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
         return PageResponse.of(new PageImpl<>(content, pageable, eventPage.getTotalElements()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<GetAllResponse> searchEvents(EventSearchRequest request, Pageable pageable) {
+        String escapedName = escapeLikePattern(request.getName());
+
+        Page<EventEntity> eventPage = eventRepository.searchByName(escapedName, pageable);
+
+        List<GetAllResponse> content = eventPage.getContent().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+
+        return PageResponse.of(new PageImpl<>(content, pageable, eventPage.getTotalElements()));
+    }
+
+    private String escapeLikePattern(String value) {
+        return value.trim()
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_");
     }
 
     @Override

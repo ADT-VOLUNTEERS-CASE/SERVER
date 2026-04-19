@@ -26,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.adt.volunteerscase.dto.event.request.EventSearchRequest;
 
 @RestController
 @RequestMapping("api/v1/event")
@@ -171,6 +172,41 @@ public class EventController {
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok().body(eventService.getRecommendations(currentUser.getUser().getUserId(), pageable));
+    }
+
+    @Operation(
+            summary = "поиск мероприятий",
+            description = "поиск мероприятий по наименованию с пагинацией",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "данные получены"),
+                    @ApiResponse(responseCode = "400", description = "невалидные данные", content =
+                    @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @PostMapping("/search")
+    public ResponseEntity<PageResponse<GetAllResponse>> searchEvents(
+            @Valid
+            @RequestBody EventSearchRequest request,
+
+            @Parameter(description = "Номер страницы, начиная с 0", example = "0")
+            @Min(value = 0, message = "Page number must be greater than or equal to 0")
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @Parameter(description = "Количество элементов на странице", example = "10")
+            @Min(value = 1, message = "Page size must be at least 1")
+            @Max(value = 60, message = "Page size must not exceed 60")
+            @RequestParam(defaultValue = "10")
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.ASC, "name")
+        );
+
+        return ResponseEntity.ok().body(eventService.searchEvents(request, pageable));
     }
 
 }

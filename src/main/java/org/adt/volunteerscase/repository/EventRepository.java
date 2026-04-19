@@ -104,4 +104,7 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
     List<EventEntity> findDetailedByEventIdIn(@Param("eventIds") Collection<Integer> eventIds);
 
 
+    @Query("SELECT e FROM EventEntity e WHERE LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%')) ESCAPE '\\'")
+    Page<EventEntity> searchByName(@Param("name") String name, Pageable pageable);
+
 }
