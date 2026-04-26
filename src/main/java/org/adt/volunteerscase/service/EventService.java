@@ -20,9 +20,9 @@ public interface EventService {
     void updateStatus(Integer eventId, EventStatusPatchRequest request);
     void deleteEvent(Integer eventId);
 
+    GetAllResponse getEventById(Integer eventId);
     PageResponse<GetAllResponse> getAllEvents(Pageable pageable);
     PageResponse<GetAllResponse> searchEvents(EventSearchRequest request, Pageable pageable);
 
     PageResponse<GetAllResponse> getRecommendations(Integer currentUserId, Pageable pageable);
 }
-

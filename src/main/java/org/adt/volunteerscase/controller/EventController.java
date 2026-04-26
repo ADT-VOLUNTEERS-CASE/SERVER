@@ -117,6 +117,24 @@ public class EventController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(
+            summary = "получение мероприятия по id",
+            description = "Возвращает подробную информацию о мероприятии по его идентификатору",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "мероприятие успешно получено", content = @Content(schema = @Schema(implementation = GetAllResponse.class))),
+                    @ApiResponse(responseCode = "401", description = "пользователь не авторизован", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+                    @ApiResponse(responseCode = "404", description = "мероприятие с указанным id не найдено", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+            }
+    )
+    @SecurityRequirement(name = "jwtAuth")
+    @GetMapping("/{eventId}")
+    public ResponseEntity<GetAllResponse> getEventById(
+            @Parameter(description = "ID мероприятия", example = "1")
+            @PathVariable Integer eventId
+    ) {
+        return ResponseEntity.ok(eventService.getEventById(eventId));
+    }
+
 
     @Operation(
             summary = "получение всех событий",

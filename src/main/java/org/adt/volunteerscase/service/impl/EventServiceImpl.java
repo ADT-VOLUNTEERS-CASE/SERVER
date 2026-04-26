@@ -232,6 +232,15 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
+    public GetAllResponse getEventById(Integer eventId) {
+        EventEntity event = eventRepository.findByEventId(eventId)
+                .orElseThrow(() -> new EventNotFoundException("event with id - " + eventId + " not found"));
+
+        return convertToResponse(event);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PageResponse<GetAllResponse> getAllEvents(Pageable pageable) {
         Page<EventEntity> eventPage = eventRepository.findAllByOrderByDateTimestampDesc(pageable);
 
