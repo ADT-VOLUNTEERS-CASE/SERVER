@@ -472,6 +472,43 @@ class EventServiceTest {
         verify(eventRepository).findAllByOrderByDateTimestampDesc(pageable);
     }
 
+    @Test
+    void getEventById_shouldReturnMappedEventResponse() {
+        when(eventRepository.findByEventId(1)).thenReturn(Optional.of(existingEvent));
+
+        GetAllResponse response = eventService.getEventById(1);
+
+        assertThat(response.getEventId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(EventStatus.ONGOING);
+        assertThat(response.getName()).isEqualTo("Old Event");
+        assertThat(response.getDescription()).isEqualTo("Old description");
+        assertThat(response.getCover().getCoverId()).isEqualTo(5);
+        assertThat(response.getCover().getLink()).isEqualTo("https://example.com/covers/cover-1.jpg");
+        assertThat(response.getCover().getFileMetadata().getWidth()).isEqualTo(1200);
+        assertThat(response.getCoordinator().getUserId()).isEqualTo(1);
+        assertThat(response.getCoordinator().getWorkLocation()).isEqualTo("Main office");
+        assertThat(response.getMaxCapacity()).isEqualTo(50);
+        assertThat(response.getDateTimestamp()).isEqualTo(eventDate);
+        assertThat(response.getLocation().getLocationId()).isEqualTo(10);
+        assertThat(response.getLocation().getAddress()).isEqualTo("Moscow, Tverskaya 1");
+        assertThat(response.getTags())
+                .extracting("tagId", "tagName")
+                .containsExactly(tuple(1, "animals"));
+
+        verify(eventRepository).findByEventId(1);
+    }
+
+    @Test
+    void getEventById_shouldThrowException_whenEventNotFound() {
+        when(eventRepository.findByEventId(77)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> eventService.getEventById(77))
+                .isInstanceOf(EventNotFoundException.class)
+                .hasMessage("event with id - 77 not found");
+
+        verify(eventRepository).findByEventId(77);
+    }
+
     private CoverEntity coverEntity(
             Integer coverId,
             String link,

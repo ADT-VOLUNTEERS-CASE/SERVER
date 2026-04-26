@@ -20,7 +20,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.adt.volunteerscase.dto.page.response.PageResponse;
+import org.adt.volunteerscase.dto.userEvent.request.CoordinatorApplicationFilterRequest;
+import org.adt.volunteerscase.dto.userEvent.response.CoordinatorApplicationResponse;
+import org.adt.volunteerscase.dto.userEvent.response.CoordinatorEventApplicationsSummaryResponse;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
+import java.util.List;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -480,6 +487,82 @@ class UserEventServiceTest {
 
         verify(userEventRepository).findByUserAndEventAndDeletedAtIsNull(applicant, event);
         verify(userEventRepository, never()).save(any(UserEventEntity.class));
+    }
+
+    @Test
+    void getMyEventApplicationSummaries_shouldReturnCoordinatorEventSummaries() {
+        PageRequest pageable = PageRequest.of(0, 10);
+
+        CoordinatorEventApplicationsSummaryResponse summary =
+                CoordinatorEventApplicationsSummaryResponse.builder()
+                        .eventId(20)
+                        .eventName("Park Cleanup")
+                        .eventStatus(EventStatus.ONGOING)
+                        .dateTimestamp(event.getDateTimestamp())
+                        .maxCapacity(2)
+                        .applicationsTotal(3L)
+                        .pendingCount(1L)
+                        .acceptedCount(1L)
+                        .rejectedCount(1L)
+                        .revokedCount(0L)
+                        .build();
+
+        when(userEventRepository.findCoordinatorEventApplicationSummaries(99, pageable))
+                .thenReturn(new PageImpl<>(List.of(summary), pageable, 1));
+
+        PageResponse<CoordinatorEventApplicationsSummaryResponse> response =
+                userEventService.getMyEventApplicationSummaries(99, pageable);
+
+        assertThat(response.getContent()).hasSize(1);
+        assertThat(response.getContent().get(0).getEventId()).isEqualTo(20);
+        assertThat(response.getContent().get(0).getPendingCount()).isEqualTo(1L);
+
+        verify(userEventRepository).findCoordinatorEventApplicationSummaries(99, pageable);
+    }
+
+    @Test
+    void getApplicationsForMyEvent_shouldReturnFilteredApplications_whenCoordinatorOwnsEvent() {
+        applicant.setFirstname("Ivan");
+        applicant.setLastname("Petrov");
+        applicant.setPhoneNumber("+79991234567");
+
+        PageRequest pageable = PageRequest.of(0, 20);
+        CoordinatorApplicationFilterRequest filter = CoordinatorApplicationFilterRequest.builder()
+                .status("pending")
+                .build();
+
+        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+        when(userEventRepository.findApplicationsByCoordinatorAndEvent(20, 99, "PENDING", pageable))
+                .thenReturn(new PageImpl<>(List.of(pendingApplication), pageable, 1));
+
+        PageResponse<CoordinatorApplicationResponse> response =
+                userEventService.getApplicationsForMyEvent(20, filter, 99, pageable);
+
+        assertThat(response.getContent()).hasSize(1);
+        assertThat(response.getContent().get(0).getUserId()).isEqualTo(10);
+        assertThat(response.getContent().get(0).getEventId()).isEqualTo(20);
+        assertThat(response.getContent().get(0).getStatus()).isEqualTo("PENDING");
+
+        verify(userEventRepository).findApplicationsByCoordinatorAndEvent(20, 99, "PENDING", pageable);
+    }
+
+    @Test
+    void getApplicationsForMyEvent_shouldThrowException_whenCoordinatorDoesNotOwnEvent() {
+        PageRequest pageable = PageRequest.of(0, 20);
+
+        when(eventRepository.findByEventId(20)).thenReturn(Optional.of(event));
+
+        assertThatThrownBy(() -> userEventService.getApplicationsForMyEvent(
+                20,
+                new CoordinatorApplicationFilterRequest(),
+                77,
+                pageable
+        ))
+                .isInstanceOf(UserEventAccessDeniedException.class)
+                .hasMessage("user with id - 77 is not coordinator of event with id - 20");
+
+        verify(userEventRepository, never())
+                .findApplicationsByCoordinatorAndEvent(anyInt(), anyInt(), any(), any());
     }
 
 }
