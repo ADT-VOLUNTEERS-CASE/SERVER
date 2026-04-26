@@ -11,7 +11,7 @@ public class CoordinatorApplicationFilterRequest {
 
     @Pattern(
             regexp = "(?i)^(PENDING|ACCEPTED|REJECTED|REVOKED)$",
-            message = "application status must be one of: PENDING, ACCEPTED, REJECTED, REVOKED"
+            message = "application status must be one of (case-insensitive): PENDING, ACCEPTED, REJECTED, REVOKED"
     )
     private String status;
 }

@@ -41,6 +41,9 @@ public class UserEventServiceImpl implements UserEventService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
 
+    private static final Set<String> APPLICATION_STATUSES =
+            Set.of("PENDING", "ACCEPTED", "REJECTED", "REVOKED");
+
     @Override
     @Transactional
     public UserEventResponse createApplication(Integer eventId, Integer currentUserId) {
@@ -139,9 +142,6 @@ public class UserEventServiceImpl implements UserEventService {
 
         return convertToResponse(userEvent);
     }
-
-    private static final Set<String> APPLICATION_STATUSES =
-            Set.of("PENDING", "ACCEPTED", "REJECTED", "REVOKED");
 
     @Override
     @Transactional(readOnly = true)

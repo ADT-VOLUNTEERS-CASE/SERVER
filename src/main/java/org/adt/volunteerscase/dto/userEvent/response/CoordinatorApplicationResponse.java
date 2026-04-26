@@ -5,6 +5,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Data
+@ToString(exclude = {"firstname", "lastname", "patronymic", "phoneNumber", "email"})
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
