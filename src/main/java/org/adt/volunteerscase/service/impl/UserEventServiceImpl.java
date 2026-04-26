@@ -21,7 +21,14 @@ import org.adt.volunteerscase.repository.UserRepository;
 import org.adt.volunteerscase.service.UserEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.adt.volunteerscase.dto.page.response.PageResponse;
+import org.adt.volunteerscase.dto.userEvent.request.CoordinatorApplicationFilterRequest;
+import org.adt.volunteerscase.dto.userEvent.response.CoordinatorApplicationResponse;
+import org.adt.volunteerscase.dto.userEvent.response.CoordinatorEventApplicationsSummaryResponse;
+import org.springframework.data.domain.Pageable;
 
+import java.util.Locale;
+import java.util.Set;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -131,6 +138,79 @@ public class UserEventServiceImpl implements UserEventService {
                 ));
 
         return convertToResponse(userEvent);
+    }
+
+    private static final Set<String> APPLICATION_STATUSES =
+            Set.of("PENDING", "ACCEPTED", "REJECTED", "REVOKED");
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CoordinatorEventApplicationsSummaryResponse> getMyEventApplicationSummaries(
+            Integer currentCoordinatorId,
+            Pageable pageable
+    ) {
+        return PageResponse.of(
+                userEventRepository.findCoordinatorEventApplicationSummaries(currentCoordinatorId,
+                        pageable)
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<CoordinatorApplicationResponse> getApplicationsForMyEvent(
+            Integer eventId,
+            CoordinatorApplicationFilterRequest filter,
+            Integer currentCoordinatorId,
+            Pageable pageable
+    ) {
+        EventEntity event = getEvent(eventId);
+        ensureCoordinatorOwnsEvent(event, currentCoordinatorId);
+
+        String status = normalizeApplicationStatus(filter == null ? null : filter.getStatus());
+
+        return PageResponse.of(
+                userEventRepository.findApplicationsByCoordinatorAndEvent(
+                        eventId,
+                        currentCoordinatorId,
+                        status,
+                        pageable
+                ).map(this::convertToCoordinatorApplicationResponse)
+        );
+    }
+
+    private String normalizeApplicationStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+
+        String normalized = status.trim().toUpperCase(Locale.ROOT);
+        if (!APPLICATION_STATUSES.contains(normalized)) {
+            throw new UserEventStateConflictException("unsupported application status - " + status);
+        }
+
+        return normalized;
+    }
+
+    private CoordinatorApplicationResponse convertToCoordinatorApplicationResponse(UserEventEntity
+                                                                                           userEvent) {
+        UserEntity user = userEvent.getUser();
+        EventEntity event = userEvent.getEvent();
+
+        return CoordinatorApplicationResponse.builder()
+                .eventId(event.getEventId())
+                .eventName(event.getName())
+                .userId(user.getUserId())
+                .firstname(user.getFirstname())
+                .lastname(user.getLastname())
+                .patronymic(user.getPatronymic())
+                .phoneNumber(user.getPhoneNumber())
+                .email(user.getEmail())
+                .status(resolveStatus(userEvent))
+                .rejectReason(userEvent.getRejectReason())
+                .createdAt(userEvent.getCreatedAt())
+                .rejectedAt(userEvent.getRejectedAt())
+                .revokedAt(userEvent.getRevokedAt())
+                .build();
     }
 
     private UserEntity getActiveUser(Integer userId) {

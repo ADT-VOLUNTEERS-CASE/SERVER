@@ -68,6 +68,10 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/user/coordinator/**").hasAuthority("ROLE_ADMIN")
                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/user/coordinator/**").hasAuthority("ROLE_ADMIN")
 
+                                .requestMatchers("/api/v1/user-event/coordinator/**").hasAuthority("ROLE_COORDINATOR")
+                                .requestMatchers(HttpMethod.PATCH, "/api/v1/user-event/update/status/**").hasAuthority("ROLE_COORDINATOR")
+
+
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
