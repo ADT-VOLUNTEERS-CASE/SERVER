@@ -209,10 +209,10 @@ public class UserServiceImpl implements UserService {
                 .eventId(event.getEventId())
                 .name(event.getName())
                 .status(String.valueOf(event.getStatus()))
+                .maxCapacity(event.getMaxCapacity())
                 .dateTimestamp(event.getDateTimestamp())
                 .build();
     }
-
 
     @Transactional(readOnly = true)
     private Set<TagEntityDTO> convertTagsToTagsDTO(Set<TagEntity> tagEntities){

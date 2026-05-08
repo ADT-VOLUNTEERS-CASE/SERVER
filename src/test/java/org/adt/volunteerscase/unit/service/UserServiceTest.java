@@ -349,6 +349,7 @@ public class UserServiceTest {
                 .eventId(50)
                 .name("Volunteer Meetup")
                 .status(EventStatus.IN_PROGRESS)
+                .maxCapacity(25)
                 .dateTimestamp(LocalDateTime.of(2026, 5, 10, 18, 0))
                 .build();
 
@@ -372,6 +373,7 @@ public class UserServiceTest {
         assertThat(response.getEvents().get(0).getEventId()).isEqualTo(50);
         assertThat(response.getEvents().get(0).getName()).isEqualTo("Volunteer Meetup");
         assertThat(response.getEvents().get(0).getStatus()).isEqualTo("IN_PROGRESS");
+        assertThat(response.getEvents().get(0).getMaxCapacity()).isEqualTo(25);
         assertThat(response.getTags()).containsExactlyInAnyOrder(
                 TagEntityDTO.builder()
                         .tagId(10)
