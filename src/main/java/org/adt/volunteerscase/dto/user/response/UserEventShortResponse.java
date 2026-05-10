@@ -16,6 +16,7 @@ public class UserEventShortResponse {
     private Integer eventId;
     private String name;
     private String status;
+    private Integer maxCapacity;
     private LocalDateTime dateTimestamp;
 
 }
