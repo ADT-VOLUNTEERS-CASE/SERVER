@@ -70,6 +70,13 @@ public class SecurityConfig {
 
                                 .requestMatchers("/api/v1/user-event/coordinator/**").hasAuthority("ROLE_COORDINATOR")
 
+                                .requestMatchers(HttpMethod.GET, "/api/v2/user/statistics").authenticated()
+                                .requestMatchers(HttpMethod.GET, "/api/v2/user/coordinator/statistics").hasAuthority("ROLE_COORDINATOR")
+
+
+                                .requestMatchers(HttpMethod.POST, "/api/v2/event/create").hasAuthority("ROLE_COORDINATOR")
+                                .requestMatchers(HttpMethod.GET, "/api/v2/event/**").authenticated()
+
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -14,8 +14,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.adt.volunteerscase.entity.event.EventStatus;
 
-import javax.xml.stream.Location;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -112,4 +112,25 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
     @Query("SELECT e FROM EventEntity e WHERE LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%')) ESCAPE '\\'")
     Page<EventEntity> searchByName(@Param("name") String name, Pageable pageable);
 
+    @Query("""
+          SELECT COUNT(e)
+          FROM EventEntity e
+          WHERE e.coordinator.userId = :coordinatorId
+            AND e.status = :eventStatus
+          """)
+    long countCompletedEventsByCoordinatorId(
+            @Param("coordinatorId") Integer coordinatorId,
+            @Param("eventStatus") EventStatus eventStatus
+    );
+
+    @Query("""
+          SELECT COALESCE(SUM(e.weightMinutes), 0)
+          FROM EventEntity e
+          WHERE e.coordinator.userId = :coordinatorId
+            AND e.status = :eventStatus
+          """)
+    Long sumCompletedEventWeightMinutesByCoordinatorId(
+            @Param("coordinatorId") Integer coordinatorId,
+            @Param("eventStatus") EventStatus eventStatus
+    );
 }

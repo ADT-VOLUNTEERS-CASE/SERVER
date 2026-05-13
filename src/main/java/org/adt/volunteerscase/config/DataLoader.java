@@ -343,6 +343,21 @@ public class DataLoader implements CommandLineRunner {
                 ecoForumTags
         );
 
+        EventEntity recentCompletedEvent = createEvent(
+                EventStatus.COMPLETED,
+                "recent completed event",
+                "recent completed event for statistics checks",
+                null,
+                coordinator,
+                30,
+                seedNow.minusDays(10),
+                thirdLocation,
+                Set.of(userTag1, coordinatorTag1)
+        );
+
+
+        createUserEvent(user, recentCompletedEvent, true, false, false, null);
+        createUserEvent(userTwo, recentCompletedEvent, true, false, false, null);
 
         createUserEvent(admin, parkCleanupEvent, true, false, false, null);
         createUserEvent(userTwo, parkCleanupEvent, false, false, false, null);

@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.adt.volunteerscase.dto.event.request.EventSearchRequest;
+import org.adt.volunteerscase.dto.event.request.EventCreateV2Request;
+import org.adt.volunteerscase.dto.event.response.EventV2Response;
 
 public interface EventService {
 
@@ -25,4 +27,10 @@ public interface EventService {
     PageResponse<GetAllResponse> searchEvents(EventSearchRequest request, Pageable pageable);
 
     PageResponse<GetAllResponse> getRecommendations(Integer currentUserId, Pageable pageable);
+
+    void createEventV2(EventCreateV2Request request);
+
+    EventV2Response getEventV2ById(Integer eventId);
+
+    PageResponse<EventV2Response> getAllEventsV2(Pageable pageable);
 }

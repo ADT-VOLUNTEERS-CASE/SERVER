@@ -3,10 +3,8 @@ package org.adt.volunteerscase.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
 import org.adt.volunteerscase.dto.cover.CoverMapper;
-import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
-import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
-import org.adt.volunteerscase.dto.event.request.EventSearchRequest;
-import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
+import org.adt.volunteerscase.dto.event.request.*;
+import org.adt.volunteerscase.dto.event.response.EventV2Response;
 import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
 import org.adt.volunteerscase.dto.location.LocationEntityDTO;
@@ -98,6 +96,61 @@ public class EventServiceImpl implements EventService {
             throw mapEventConstraintException(ex, eventEntity);
         }
 
+    }
+
+    @Override
+    @Transactional
+    public void createEventV2(EventCreateV2Request request) {
+
+        LocationEntity locationEntity = locationRepository.findByLocationId(request.getLocationId())
+                .orElseThrow(() -> new LocationNotFoundException(
+                        "location with id - " + request.getLocationId() + " not found"
+                ));
+
+        if (eventRepository.existsByLocationAndDateTimestamp(locationEntity, request.getDateTimestamp())) {
+            throw new LocationAlreadyExistsException(
+                    "location with id - " + request.getLocationId()
+                            + " is occupied in date - " + request.getDateTimestamp()
+            );
+        }
+
+        CoverEntity coverEntity = null;
+        if (request.getCoverId() != null) {
+            coverEntity = coverRepository.findByCoverIdAndDeletedAtIsNull(request.getCoverId())
+                    .orElseThrow(() -> new CoverNotFoundException(
+                            "cover with id - " + request.getCoverId() + " not found"
+                    ));
+
+            if (eventRepository.existsByCover(coverEntity)) {
+                throw new CoverAlreadyExistsException(
+                        "cover with id - " + request.getCoverId() + " already exists"
+                );
+            }
+        }
+
+        CoordinatorEntity coordinatorEntity = coordinatorRepository.findById(request.getCoordinatorId())
+                .orElseThrow(() -> new CoordinatorNotFoundException(
+                        "coordinator with id - " + request.getCoordinatorId() + " not found"
+                ));
+
+        EventEntity eventEntity = EventEntity.builder()
+                .name(request.getName())
+                .status(EventStatus.valueOf(request.getStatus()))
+                .description(request.getDescription())
+                .cover(coverEntity)
+                .coordinator(coordinatorEntity)
+                .maxCapacity(request.getMaxCapacity())
+                .weightMinutes(request.getWeightMinutes())
+                .dateTimestamp(request.getDateTimestamp())
+                .location(locationEntity)
+                .tags(tagService.getTagEntities(request.getTagIds()))
+                .build();
+
+        try {
+            eventRepository.saveAndFlush(eventEntity);
+        } catch (DataIntegrityViolationException ex) {
+            throw mapEventConstraintException(ex, eventEntity);
+        }
     }
 
     @Override
@@ -241,6 +294,16 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
+    public EventV2Response getEventV2ById(Integer eventId) {
+        EventEntity event = eventRepository.findByEventId(eventId)
+                .orElseThrow(() -> new EventNotFoundException("event with id - " + eventId + " not found"));
+
+        return convertToV2Response(event);
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
     public PageResponse<GetAllResponse> getAllEvents(Pageable pageable) {
         Page<EventEntity> eventPage = eventRepository.findAllByOrderByDateTimestampDesc(pageable);
 
@@ -249,6 +312,19 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toList());
         return PageResponse.of(new PageImpl<>(content, pageable, eventPage.getTotalElements()));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<EventV2Response> getAllEventsV2(Pageable pageable) {
+        Page<EventEntity> eventPage = eventRepository.findAllByOrderByDateTimestampDesc(pageable);
+
+        List<EventV2Response> content = eventPage.getContent().stream()
+                .map(this::convertToV2Response)
+                .collect(Collectors.toList());
+
+        return PageResponse.of(new PageImpl<>(content, pageable, eventPage.getTotalElements()));
+    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -323,6 +399,23 @@ public class EventServiceImpl implements EventService {
                 .cover(coverMapper.toDto(event.getCover()))
                 .coordinator(convertCoordinatorToDTO(event.getCoordinator()))
                 .maxCapacity(event.getMaxCapacity())
+                .dateTimestamp(event.getDateTimestamp())
+                .location(convertLocationToLocationDTO(event.getLocation()))
+                .tags(convertTagsToTagsDTO(event.getTags()))
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    private EventV2Response convertToV2Response(EventEntity event) {
+        return EventV2Response.builder()
+                .eventId(event.getEventId())
+                .status(event.getStatus())
+                .name(event.getName())
+                .description(event.getDescription())
+                .cover(coverMapper.toDto(event.getCover()))
+                .coordinator(convertCoordinatorToDTO(event.getCoordinator()))
+                .maxCapacity(event.getMaxCapacity())
+                .weightMinutes(event.getWeightMinutes())
                 .dateTimestamp(event.getDateTimestamp())
                 .location(convertLocationToLocationDTO(event.getLocation()))
                 .tags(convertTagsToTagsDTO(event.getTags()))

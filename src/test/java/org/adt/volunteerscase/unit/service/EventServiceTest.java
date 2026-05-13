@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.adt.volunteerscase.dto.cover.CoverMapper;
 import org.adt.volunteerscase.dto.cover.CoverMetadataDTO;
 import org.adt.volunteerscase.dto.event.request.EventCreateRequest;
+import org.adt.volunteerscase.dto.event.request.EventCreateV2Request;
 import org.adt.volunteerscase.dto.event.request.EventPatchRequest;
 import org.adt.volunteerscase.dto.event.request.EventSearchRequest;
 import org.adt.volunteerscase.dto.event.request.EventStatusPatchRequest;
+import org.adt.volunteerscase.dto.event.response.EventV2Response;
 import org.adt.volunteerscase.dto.event.response.GetAllResponse;
 import org.adt.volunteerscase.dto.event.response.PatchResponse;
 import org.adt.volunteerscase.dto.page.response.PageResponse;
@@ -142,6 +144,7 @@ class EventServiceTest {
                 .cover(cover)
                 .coordinator(coordinator)
                 .maxCapacity(50)
+                .weightMinutes(90)
                 .dateTimestamp(eventDate)
                 .location(location)
                 .tags(Set.of(firstTag))
@@ -211,6 +214,49 @@ class EventServiceTest {
                 .hasMessage("cover with id - 5 is already used by another event");
 
         verify(eventRepository).saveAndFlush(any(EventEntity.class));
+    }
+
+    @Test
+    void createEventV2_shouldSaveEventWithWeightMinutes_whenRequestIsValid() {
+        EventCreateV2Request request = EventCreateV2Request.builder()
+                .name("Weighted Cleanup")
+                .status("ONGOING")
+                .description("Cleaning the city park with explicit weight")
+                .coverId(5)
+                .coordinatorId(1)
+                .maxCapacity(100)
+                .weightMinutes(180)
+                .dateTimestamp(eventDate)
+                .locationId(10)
+                .tagIds(Set.of(1))
+                .build();
+
+        when(locationRepository.findByLocationId(10)).thenReturn(Optional.of(location));
+        when(eventRepository.existsByLocationAndDateTimestamp(location, eventDate)).thenReturn(false);
+        when(coverRepository.findByCoverIdAndDeletedAtIsNull(5)).thenReturn(Optional.of(cover));
+        when(eventRepository.existsByCover(cover)).thenReturn(false);
+        when(coordinatorRepository.findById(1)).thenReturn(Optional.of(coordinator));
+        when(tagService.getTagEntities(Set.of(1))).thenReturn(Set.of(firstTag));
+
+        ArgumentCaptor<EventEntity> eventCaptor = ArgumentCaptor.forClass(EventEntity.class);
+
+        eventService.createEventV2(request);
+
+        verify(eventRepository).saveAndFlush(eventCaptor.capture());
+        EventEntity savedEvent = eventCaptor.getValue();
+
+        assertThat(savedEvent.getName()).isEqualTo("Weighted Cleanup");
+        assertThat(savedEvent.getStatus()).isEqualTo(EventStatus.ONGOING);
+        assertThat(savedEvent.getDescription()).isEqualTo("Cleaning the city park with explicit weight");
+        assertThat(savedEvent.getCover()).isSameAs(cover);
+        assertThat(savedEvent.getCoordinator()).isSameAs(coordinator);
+        assertThat(savedEvent.getMaxCapacity()).isEqualTo(100);
+        assertThat(savedEvent.getWeightMinutes()).isEqualTo(180);
+        assertThat(savedEvent.getDateTimestamp()).isEqualTo(eventDate);
+        assertThat(savedEvent.getLocation()).isSameAs(location);
+        assertThat(savedEvent.getTags()).containsExactly(firstTag);
+
+        verify(tagService).getTagEntities(Set.of(1));
     }
 
     @Test
@@ -473,6 +519,45 @@ class EventServiceTest {
     }
 
     @Test
+    void getAllEventsV2_shouldReturnMappedPageResponseWithWeightMinutes() {
+        Pageable pageable = PageRequest.of(0, 1);
+        Page<EventEntity> eventPage = new PageImpl<>(List.of(existingEvent), pageable, 2);
+
+        when(eventRepository.findAllByOrderByDateTimestampDesc(pageable)).thenReturn(eventPage);
+
+        PageResponse<EventV2Response> response = eventService.getAllEventsV2(pageable);
+
+        assertThat(response.getContent()).hasSize(1);
+        assertThat(response.getPageNumber()).isEqualTo(0);
+        assertThat(response.getPageSize()).isEqualTo(1);
+        assertThat(response.getTotalElements()).isEqualTo(2);
+        assertThat(response.getTotalPages()).isEqualTo(2);
+        assertThat(response.isFirst()).isTrue();
+        assertThat(response.isLast()).isFalse();
+
+        EventV2Response eventResponse = response.getContent().get(0);
+        assertThat(eventResponse.getEventId()).isEqualTo(1);
+        assertThat(eventResponse.getStatus()).isEqualTo(EventStatus.ONGOING);
+        assertThat(eventResponse.getName()).isEqualTo("Old Event");
+        assertThat(eventResponse.getDescription()).isEqualTo("Old description");
+        assertThat(eventResponse.getCover().getCoverId()).isEqualTo(5);
+        assertThat(eventResponse.getCover().getLink()).isEqualTo("https://example.com/covers/cover-1.jpg");
+        assertThat(eventResponse.getCover().getFileMetadata().getWidth()).isEqualTo(1200);
+        assertThat(eventResponse.getCoordinator().getUserId()).isEqualTo(1);
+        assertThat(eventResponse.getCoordinator().getWorkLocation()).isEqualTo("Main office");
+        assertThat(eventResponse.getMaxCapacity()).isEqualTo(50);
+        assertThat(eventResponse.getWeightMinutes()).isEqualTo(90);
+        assertThat(eventResponse.getDateTimestamp()).isEqualTo(eventDate);
+        assertThat(eventResponse.getLocation().getLocationId()).isEqualTo(10);
+        assertThat(eventResponse.getLocation().getAddress()).isEqualTo("Moscow, Tverskaya 1");
+        assertThat(eventResponse.getTags())
+                .extracting("tagId", "tagName")
+                .containsExactly(tuple(1, "animals"));
+
+        verify(eventRepository).findAllByOrderByDateTimestampDesc(pageable);
+    }
+
+    @Test
     void getEventById_shouldReturnMappedEventResponse() {
         when(eventRepository.findByEventId(1)).thenReturn(Optional.of(existingEvent));
 
@@ -496,6 +581,44 @@ class EventServiceTest {
                 .containsExactly(tuple(1, "animals"));
 
         verify(eventRepository).findByEventId(1);
+    }
+
+    @Test
+    void getEventV2ById_shouldReturnMappedEventResponseWithWeightMinutes() {
+        when(eventRepository.findByEventId(1)).thenReturn(Optional.of(existingEvent));
+
+        EventV2Response response = eventService.getEventV2ById(1);
+
+        assertThat(response.getEventId()).isEqualTo(1);
+        assertThat(response.getStatus()).isEqualTo(EventStatus.ONGOING);
+        assertThat(response.getName()).isEqualTo("Old Event");
+        assertThat(response.getDescription()).isEqualTo("Old description");
+        assertThat(response.getCover().getCoverId()).isEqualTo(5);
+        assertThat(response.getCover().getLink()).isEqualTo("https://example.com/covers/cover-1.jpg");
+        assertThat(response.getCover().getFileMetadata().getWidth()).isEqualTo(1200);
+        assertThat(response.getCoordinator().getUserId()).isEqualTo(1);
+        assertThat(response.getCoordinator().getWorkLocation()).isEqualTo("Main office");
+        assertThat(response.getMaxCapacity()).isEqualTo(50);
+        assertThat(response.getWeightMinutes()).isEqualTo(90);
+        assertThat(response.getDateTimestamp()).isEqualTo(eventDate);
+        assertThat(response.getLocation().getLocationId()).isEqualTo(10);
+        assertThat(response.getLocation().getAddress()).isEqualTo("Moscow, Tverskaya 1");
+        assertThat(response.getTags())
+                .extracting("tagId", "tagName")
+                .containsExactly(tuple(1, "animals"));
+
+        verify(eventRepository).findByEventId(1);
+    }
+
+    @Test
+    void getEventV2ById_shouldThrowException_whenEventNotFound() {
+        when(eventRepository.findByEventId(77)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> eventService.getEventV2ById(77))
+                .isInstanceOf(EventNotFoundException.class)
+                .hasMessage("event with id - 77 not found");
+
+        verify(eventRepository).findByEventId(77);
     }
 
     @Test
