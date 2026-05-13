@@ -91,7 +91,7 @@ class StatisticsServiceTest {
         );
 
         when(userRepository.findByUserIdAndDeletedAtIsNull(1)).thenReturn(Optional.of(user));
-        when(userEventRepository.countCompletedParticipationsByUserId(1, EventStatus.COMPLETED))
+        when(userEventRepository.countCompletedParticipationsByUserId(1))
                 .thenReturn(5L);
         when(userEventRepository.countCompletedParticipationsByUserIdBetween(
                 eq(1),
@@ -120,7 +120,7 @@ class StatisticsServiceTest {
         assertThat(response.getMaxParticipationStreakMonths()).isEqualTo(4);
 
         verify(userRepository).findByUserIdAndDeletedAtIsNull(1);
-        verify(userEventRepository).countCompletedParticipationsByUserId(1, EventStatus.COMPLETED);
+        verify(userEventRepository).countCompletedParticipationsByUserId(1);
         verify(userEventRepository).sumCompletedParticipationWeightMinutesByUserId(1, EventStatus.COMPLETED);
         verify(userEventRepository).findCompletedParticipationDatesByUserId(1, EventStatus.COMPLETED);
     }
@@ -128,7 +128,7 @@ class StatisticsServiceTest {
     @Test
     void getUserStatistics_shouldReturnZeroStreaks_whenUserHasNoParticipations() {
         when(userRepository.findByUserIdAndDeletedAtIsNull(1)).thenReturn(Optional.of(user));
-        when(userEventRepository.countCompletedParticipationsByUserId(1, EventStatus.COMPLETED))
+        when(userEventRepository.countCompletedParticipationsByUserId(1))
                 .thenReturn(0L);
         when(userEventRepository.countCompletedParticipationsByUserIdBetween(
                 eq(1),
@@ -176,7 +176,7 @@ class StatisticsServiceTest {
                 .thenReturn(4L);
         when(userEventRepository.countCompletedEventParticipantsByCoordinatorId(2, EventStatus.COMPLETED))
                 .thenReturn(12L);
-        when(eventRepository.sumCompletedEventWeightMinutesByCoordinatorId(2, EventStatus.COMPLETED))
+        when(eventRepository.sumCompletedEventWeightMinutesByCoordinatorId(2))
                 .thenReturn(900L);
 
         CoordinatorStatisticsResponse response = statisticsService.getCoordinatorStatistics(2);
@@ -188,7 +188,7 @@ class StatisticsServiceTest {
         verify(coordinatorRepository).findById(2);
         verify(eventRepository).countCompletedEventsByCoordinatorId(2, EventStatus.COMPLETED);
         verify(userEventRepository).countCompletedEventParticipantsByCoordinatorId(2, EventStatus.COMPLETED);
-        verify(eventRepository).sumCompletedEventWeightMinutesByCoordinatorId(2, EventStatus.COMPLETED);
+        verify(eventRepository).sumCompletedEventWeightMinutesByCoordinatorId(2);
     }
 
     @Test

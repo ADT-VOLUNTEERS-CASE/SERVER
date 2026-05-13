@@ -38,7 +38,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime monthStart = now.minusMonths(1);
 
-        long totalEvents = userEventRepository.countCompletedParticipationsByUserId(userId, EventStatus.COMPLETED);
+        long totalEvents = userEventRepository.countCompletedParticipationsByUserId(userId);
         long monthlyEvents = userEventRepository.countCompletedParticipationsByUserIdBetween(
                 userId,
                 EventStatus.COMPLETED,
@@ -91,8 +91,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                         EventStatus.COMPLETED
                 ))
                 .totalWeightMinutes(safe(eventRepository.sumCompletedEventWeightMinutesByCoordinatorId(
-                        coordinatorId,
-                        EventStatus.COMPLETED
+                        coordinatorId
                 )))
                 .build();
     }

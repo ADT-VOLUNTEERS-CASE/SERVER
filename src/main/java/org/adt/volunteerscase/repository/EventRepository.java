@@ -116,7 +116,7 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
           SELECT COUNT(e)
           FROM EventEntity e
           WHERE e.coordinator.userId = :coordinatorId
-            AND e.status = :eventStatus
+             AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
           """)
     long countCompletedEventsByCoordinatorId(
             @Param("coordinatorId") Integer coordinatorId,
@@ -129,8 +129,7 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
           WHERE e.coordinator.userId = :coordinatorId
             AND e.status = :eventStatus
           """)
-    Long sumCompletedEventWeightMinutesByCoordinatorId(
-            @Param("coordinatorId") Integer coordinatorId,
-            @Param("eventStatus") EventStatus eventStatus
+    long sumCompletedEventWeightMinutesByCoordinatorId(
+            @Param("coordinatorId") Integer coordinatorId
     );
 }

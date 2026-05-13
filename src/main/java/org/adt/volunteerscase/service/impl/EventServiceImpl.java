@@ -405,7 +405,6 @@ public class EventServiceImpl implements EventService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
     private EventV2Response convertToV2Response(EventEntity event) {
         return EventV2Response.builder()
                 .eventId(event.getEventId())

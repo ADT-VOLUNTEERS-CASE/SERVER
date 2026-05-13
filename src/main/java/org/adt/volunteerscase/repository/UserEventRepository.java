@@ -135,11 +135,10 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
             AND ue.deletedAt IS NULL
             AND ue.accepted = true
             AND ue.revoked = false
-            AND e.status = :eventStatus
+            AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
           """)
     long countCompletedParticipationsByUserId(
-            @Param("userId") Integer userId,
-            @Param("eventStatus") EventStatus eventStatus
+            @Param("userId") Integer userId
     );
 
     @Query("""
@@ -171,7 +170,7 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
             AND ue.revoked = false
             AND e.status = :eventStatus
           """)
-    Long sumCompletedParticipationWeightMinutesByUserId(
+    long sumCompletedParticipationWeightMinutesByUserId(
             @Param("userId") Integer userId,
             @Param("eventStatus") EventStatus eventStatus
     );
@@ -188,7 +187,7 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
             AND e.dateTimestamp >= :from
             AND e.dateTimestamp < :to
           """)
-    Long sumCompletedParticipationWeightMinutesByUserIdBetween(
+    long sumCompletedParticipationWeightMinutesByUserIdBetween(
             @Param("userId") Integer userId,
             @Param("eventStatus") EventStatus eventStatus,
             @Param("from") LocalDateTime from,
