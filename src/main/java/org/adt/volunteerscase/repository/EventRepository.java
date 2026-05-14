@@ -1,6 +1,7 @@
 package org.adt.volunteerscase.repository;
 
 import jakarta.persistence.LockModeType;
+import org.adt.volunteerscase.dto.rating.RatingAggregateDTO;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.CoverEntity;
 import org.adt.volunteerscase.entity.LocationEntity;
@@ -132,4 +133,33 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
     long sumCompletedEventWeightMinutesByCoordinatorId(
             @Param("coordinatorId") Integer coordinatorId
     );
+
+    @Query("""
+          SELECT new org.adt.volunteerscase.dto.rating.RatingAggregateDTO(
+              e.coordinator.userId,
+              COALESCE(SUM(e.weightMinutes), 0)
+          )
+          FROM EventEntity e
+          WHERE e.coordinator.user.deletedAt IS NULL
+            AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
+          GROUP BY e.coordinator.userId
+          HAVING COALESCE(SUM(e.weightMinutes), 0) > 0
+          ORDER BY COALESCE(SUM(e.weightMinutes), 0) DESC, e.coordinator.userId ASC
+          """)
+    List<RatingAggregateDTO> findOverallCoordinatorRatingAggregates();
+
+    @Query("""
+          SELECT new org.adt.volunteerscase.dto.rating.RatingAggregateDTO(
+              e.coordinator.userId,
+              COALESCE(SUM(e.weightMinutes), 0)
+          )
+          FROM EventEntity e
+          WHERE e.coordinator.user.deletedAt IS NULL
+            AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
+            AND e.dateTimestamp >= :from
+          GROUP BY e.coordinator.userId
+          HAVING COALESCE(SUM(e.weightMinutes), 0) > 0
+          ORDER BY COALESCE(SUM(e.weightMinutes), 0) DESC, e.coordinator.userId ASC
+          """)
+    List<RatingAggregateDTO> findMonthlyCoordinatorRatingAggregates(@Param("from") LocalDateTime from);
 }
