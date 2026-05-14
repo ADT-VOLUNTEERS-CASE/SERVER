@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import org.adt.volunteerscase.dto.userEvent.response.CoordinatorEventApplicationsSummaryResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.adt.volunteerscase.dto.rating.RatingAggregateDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -224,5 +225,46 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
             @Param("coordinatorId") Integer coordinatorId,
             @Param("eventStatus") EventStatus eventStatus
     );
+
+    @Query("""
+          SELECT new org.adt.volunteerscase.dto.rating.RatingAggregateDTO(
+              ue.user.userId,
+              COALESCE(SUM(e.weightMinutes), 0)
+          )
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+            AND ue.user.deletedAt IS NULL
+            AND ue.user.isAdmin = false
+            AND ue.user.isCoordinator = false
+            AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
+          GROUP BY ue.user.userId
+          HAVING COALESCE(SUM(e.weightMinutes), 0) > 0
+          ORDER BY COALESCE(SUM(e.weightMinutes), 0) DESC, ue.user.userId ASC
+          """)
+    List<RatingAggregateDTO> findOverallUserRatingAggregates();
+
+    @Query("""
+          SELECT new org.adt.volunteerscase.dto.rating.RatingAggregateDTO(
+              ue.user.userId,
+              COALESCE(SUM(e.weightMinutes), 0)
+          )
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+            AND ue.user.deletedAt IS NULL
+            AND ue.user.isAdmin = false
+            AND ue.user.isCoordinator = false
+            AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
+            AND e.dateTimestamp >= :from
+          GROUP BY ue.user.userId
+          HAVING COALESCE(SUM(e.weightMinutes), 0) > 0
+          ORDER BY COALESCE(SUM(e.weightMinutes), 0) DESC, ue.user.userId ASC
+          """)
+    List<RatingAggregateDTO> findMonthlyUserRatingAggregates(@Param("from") LocalDateTime from);
 
 }

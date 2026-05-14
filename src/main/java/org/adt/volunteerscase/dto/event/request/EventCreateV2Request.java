@@ -40,12 +40,12 @@ public class EventCreateV2Request {
 
     @Schema(description = "Максимальное количество участников")
     @Min(value = 1, message = "Max capacity must be greater than 0")
-    @NotNull(message = "maxCapacity is blank")
+    @NotNull(message = "maxCapacity is null")
     private Integer maxCapacity;
 
     @Schema(description = "Вес мероприятия в минутах", example = "120")
     @Min(value = 1, message = "Weight minutes must be greater than 0")
-    @NotNull(message = "weightMinutes is blank")
+    @NotNull(message = "weightMinutes is null")
     private Integer weightMinutes;
 
     @Schema(description = "Дата и время мероприятия")

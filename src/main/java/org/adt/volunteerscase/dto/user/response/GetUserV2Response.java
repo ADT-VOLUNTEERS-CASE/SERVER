@@ -1,0 +1,38 @@
+package org.adt.volunteerscase.dto.user.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.adt.volunteerscase.dto.tag.TagEntityDTO;
+
+import java.util.List;
+import java.util.Set;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class GetUserV2Response {
+
+    private Integer id;
+
+    private String firstname;
+    private String lastname;
+    private String patronymic;
+
+    private String phoneNumber;
+    private String email;
+
+    private boolean isAdmin;
+    private boolean isCoordinator;
+
+    private Set<TagEntityDTO> tags;
+
+    private List<UserEventShortResponse> events;
+
+    private String workLocation;
+
+    private Integer monthlyRating;
+    private Integer overallRating;
+}

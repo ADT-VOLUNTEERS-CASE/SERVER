@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
+import org.adt.volunteerscase.dto.user.response.GetUserV2Response;
 import org.adt.volunteerscase.dto.user.response.UserEventShortResponse;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.TagEntity;
@@ -19,6 +20,8 @@ import org.adt.volunteerscase.service.UserService;
 import org.adt.volunteerscase.service.security.RefreshTokenService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.adt.volunteerscase.entity.rating.RatingPeriod;
+import org.adt.volunteerscase.service.RatingService;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -35,6 +38,7 @@ public class UserServiceImpl implements UserService {
     private final CoordinatorRepository coordinatorRepository;
     private final EventRepository eventRepository;
     private final UserEventRepository userEventRepository;
+    private final RatingService ratingService;
 
     @Override
     @Transactional
@@ -164,18 +168,36 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public GetUserResponse getCurrentUser(UserEntity currentUser) {
-        UserEntity freshUser = userRepository.findByUserIdAndDeletedAtIsNull(currentUser.getUserId())
-                .orElseThrow(() -> new UserNotFoundException("user with id - " + currentUser.getUserId() + " not found"));
+        UserEntity freshUser = getFreshUser(currentUser);
+        CoordinatorEntity coordinatorEntity = getCoordinatorEntityIfNeeded(freshUser);
 
-        CoordinatorEntity coordinatorEntity = null;
-        if (freshUser.isCoordinator()) {
-            coordinatorEntity = coordinatorRepository.findById(freshUser.getUserId())
-                    .orElseThrow(() -> new CoordinatorNotFoundException(
-                            "coordinator with user id - " + freshUser.getUserId() + " not found"
-                    ));
-        }
 
         return convertToResponse(freshUser, coordinatorEntity);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GetUserV2Response getCurrentUserV2(UserEntity currentUser) {
+        UserEntity freshUser = getFreshUser(currentUser);
+        CoordinatorEntity coordinatorEntity = getCoordinatorEntityIfNeeded(freshUser);
+
+        return convertToV2Response(freshUser, coordinatorEntity);
+    }
+
+    private UserEntity getFreshUser(UserEntity currentUser) {
+        return userRepository.findByUserIdAndDeletedAtIsNull(currentUser.getUserId())
+                .orElseThrow(() -> new UserNotFoundException("user with id - " + currentUser.getUserId() + " not found"));
+    }
+
+    private CoordinatorEntity getCoordinatorEntityIfNeeded(UserEntity userEntity) {
+        if (!userEntity.isCoordinator()) {
+            return null;
+        }
+
+        return coordinatorRepository.findById(userEntity.getUserId())
+                .orElseThrow(() -> new CoordinatorNotFoundException(
+                        "coordinator with user id - " + userEntity.getUserId() + " not found"
+                ));
     }
 
     private GetUserResponse convertToResponse(UserEntity userEntity, CoordinatorEntity coordinatorEntity) {
@@ -190,6 +212,25 @@ public class UserServiceImpl implements UserService {
                 .lastname(userEntity.getLastname())
                 .patronymic(userEntity.getPatronymic())
                 .workLocation(coordinatorEntity != null ? coordinatorEntity.getWorkLocation() : null)
+                .tags(convertTagsToTagsDTO(userEntity.getTags()))
+                .events(getActiveUpcomingEvents(userEntity, now))
+                .build();
+    }
+
+    private GetUserV2Response convertToV2Response(UserEntity userEntity, CoordinatorEntity coordinatorEntity) {
+        LocalDateTime now = LocalDateTime.now();
+        return GetUserV2Response.builder()
+                .id(userEntity.getUserId())
+                .email(userEntity.getEmail())
+                .phoneNumber(userEntity.getPhoneNumber())
+                .isAdmin(userEntity.isAdmin())
+                .isCoordinator(userEntity.isCoordinator())
+                .firstname(userEntity.getFirstname())
+                .lastname(userEntity.getLastname())
+                .patronymic(userEntity.getPatronymic())
+                .workLocation(coordinatorEntity != null ? coordinatorEntity.getWorkLocation() : null)
+                .monthlyRating(ratingService.getUserRatingPosition(userEntity.getUserId(), RatingPeriod.MONTHLY))
+                .overallRating(ratingService.getUserRatingPosition(userEntity.getUserId(), RatingPeriod.OVERALL))
                 .tags(convertTagsToTagsDTO(userEntity.getTags()))
                 .events(getActiveUpcomingEvents(userEntity, now))
                 .build();

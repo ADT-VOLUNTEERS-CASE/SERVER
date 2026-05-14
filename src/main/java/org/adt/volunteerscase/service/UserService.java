@@ -2,6 +2,7 @@ package org.adt.volunteerscase.service;
 
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
+import org.adt.volunteerscase.dto.user.response.GetUserV2Response;
 import org.adt.volunteerscase.entity.user.UserEntity;
 
 public interface UserService {
@@ -14,4 +15,6 @@ public interface UserService {
     void deleteCoordinatorByEmail(String email);
 
     GetUserResponse getCurrentUser(UserEntity currentUser);
+
+    GetUserV2Response getCurrentUserV2(UserEntity currentUser);
 }
