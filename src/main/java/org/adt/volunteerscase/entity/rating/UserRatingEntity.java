@@ -35,6 +35,7 @@ public class UserRatingEntity {
     @Column(nullable = false)
     private RatingPeriod period;
 
+    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "userId", nullable = false)
     private UserEntity user;

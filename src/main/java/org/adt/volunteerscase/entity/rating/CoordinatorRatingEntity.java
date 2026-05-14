@@ -35,6 +35,7 @@ public class CoordinatorRatingEntity {
     @Column(nullable = false)
     private RatingPeriod period;
 
+    @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "coordinatorId", nullable = false)
     private CoordinatorEntity coordinator;

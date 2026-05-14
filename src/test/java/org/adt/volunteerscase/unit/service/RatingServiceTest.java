@@ -136,9 +136,8 @@ class RatingServiceTest {
                         new RatingAggregateDTO(99, 200L),
                         new RatingAggregateDTO(2, 120L)
                 ));
-        when(userRepository.findByUserIdAndDeletedAtIsNull(1)).thenReturn(Optional.of(firstUser));
-        when(userRepository.findByUserIdAndDeletedAtIsNull(99)).thenReturn(Optional.empty());
-        when(userRepository.findByUserIdAndDeletedAtIsNull(2)).thenReturn(Optional.of(secondUser));
+        when(userRepository.findAllByUserIdInAndDeletedAtIsNull(List.of(1, 99, 2)))
+                .thenReturn(List.of(firstUser, secondUser));
 
         ratingService.rebuildUserRatings(RatingPeriod.MONTHLY);
 
@@ -161,6 +160,7 @@ class RatingServiceTest {
         inOrder.verify(userRatingRepository).deleteByPeriod(RatingPeriod.MONTHLY);
         inOrder.verify(userRatingRepository).flush();
         inOrder.verify(userRatingRepository).saveAll(any());
+        verify(userRepository, never()).findByUserIdAndDeletedAtIsNull(anyInt());
     }
 
     @Test
@@ -171,6 +171,7 @@ class RatingServiceTest {
 
         verify(userEventRepository).findOverallUserRatingAggregates();
         verify(userEventRepository, never()).findMonthlyUserRatingAggregates(any(LocalDateTime.class));
+        verify(userRepository, never()).findAllByUserIdInAndDeletedAtIsNull(any());
         verify(userRatingRepository).deleteByPeriod(RatingPeriod.OVERALL);
         verify(userRatingRepository).flush();
         verify(userRatingRepository).saveAll(argThat(iterable -> !iterable.iterator().hasNext()));
@@ -184,9 +185,8 @@ class RatingServiceTest {
                         new RatingAggregateDTO(404, 400L),
                         new RatingAggregateDTO(11, 180L)
                 ));
-        when(coordinatorRepository.findById(10)).thenReturn(Optional.of(firstCoordinator));
-        when(coordinatorRepository.findById(404)).thenReturn(Optional.empty());
-        when(coordinatorRepository.findById(11)).thenReturn(Optional.of(secondCoordinator));
+        when(coordinatorRepository.findAllByUserIdIn(List.of(10, 404, 11)))
+                .thenReturn(List.of(firstCoordinator, secondCoordinator));
 
         ratingService.rebuildCoordinatorRatings(RatingPeriod.MONTHLY);
 
@@ -209,6 +209,7 @@ class RatingServiceTest {
         inOrder.verify(coordinatorRatingRepository).deleteByPeriod(RatingPeriod.MONTHLY);
         inOrder.verify(coordinatorRatingRepository).flush();
         inOrder.verify(coordinatorRatingRepository).saveAll(any());
+        verify(coordinatorRepository, never()).findById(anyInt());
     }
 
     @Test

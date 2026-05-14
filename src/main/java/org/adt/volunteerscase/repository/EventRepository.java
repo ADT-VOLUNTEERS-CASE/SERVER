@@ -15,7 +15,6 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import org.adt.volunteerscase.entity.event.EventStatus;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -120,15 +119,14 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
              AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
           """)
     long countCompletedEventsByCoordinatorId(
-            @Param("coordinatorId") Integer coordinatorId,
-            @Param("eventStatus") EventStatus eventStatus
+            @Param("coordinatorId") Integer coordinatorId
     );
 
     @Query("""
           SELECT COALESCE(SUM(e.weightMinutes), 0)
           FROM EventEntity e
           WHERE e.coordinator.userId = :coordinatorId
-            AND e.status = :eventStatus
+            AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
           """)
     long sumCompletedEventWeightMinutesByCoordinatorId(
             @Param("coordinatorId") Integer coordinatorId

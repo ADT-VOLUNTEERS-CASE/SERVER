@@ -79,8 +79,7 @@ public class SecurityConfig {
 
                                 .requestMatchers(HttpMethod.GET, "/api/v2/user/me").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/v2/user/rating").authenticated()
-                                .requestMatchers(HttpMethod.GET, "/api/v2/user/coordinator/rating").authenticated()
-
+                                .requestMatchers(HttpMethod.GET, "/api/v2/user/coordinator/rating").hasAuthority("ROLE_COORDINATOR")
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

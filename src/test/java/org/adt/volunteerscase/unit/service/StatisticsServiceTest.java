@@ -172,7 +172,7 @@ class StatisticsServiceTest {
     @Test
     void getCoordinatorStatistics_shouldReturnAggregatedValues() {
         when(coordinatorRepository.findById(2)).thenReturn(Optional.of(coordinator));
-        when(eventRepository.countCompletedEventsByCoordinatorId(2, EventStatus.COMPLETED))
+        when(eventRepository.countCompletedEventsByCoordinatorId(2))
                 .thenReturn(4L);
         when(userEventRepository.countCompletedEventParticipantsByCoordinatorId(2, EventStatus.COMPLETED))
                 .thenReturn(12L);
@@ -186,7 +186,7 @@ class StatisticsServiceTest {
         assertThat(response.getTotalWeightMinutes()).isEqualTo(900L);
 
         verify(coordinatorRepository).findById(2);
-        verify(eventRepository).countCompletedEventsByCoordinatorId(2, EventStatus.COMPLETED);
+        verify(eventRepository).countCompletedEventsByCoordinatorId(2);
         verify(userEventRepository).countCompletedEventParticipantsByCoordinatorId(2, EventStatus.COMPLETED);
         verify(eventRepository).sumCompletedEventWeightMinutesByCoordinatorId(2);
     }

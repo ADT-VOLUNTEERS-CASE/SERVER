@@ -27,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,12 +57,12 @@ public class RatingServiceImpl implements RatingService {
         LocalDateTime calculatedAt = LocalDateTime.now();
 
         List<RatingAggregateDTO> aggregates = findUserRatingAggregates(period);
+        Map<Integer, UserEntity> usersById = findUsersByAggregateSubjectIds(aggregates);
         List<UserRatingEntity> ratings = new ArrayList<>();
 
         int position = 1;
         for (RatingAggregateDTO aggregate : aggregates) {
-            UserEntity user = userRepository.findByUserIdAndDeletedAtIsNull(aggregate.getSubjectId())
-                    .orElse(null);
+            UserEntity user = usersById.get(aggregate.getSubjectId());
 
             if (user == null) {
                 continue;
@@ -87,12 +90,12 @@ public class RatingServiceImpl implements RatingService {
         LocalDateTime calculatedAt = LocalDateTime.now();
 
         List<RatingAggregateDTO> aggregates = findCoordinatorRatingAggregates(period);
+        Map<Integer, CoordinatorEntity> coordinatorsById = findCoordinatorsByAggregateSubjectIds(aggregates);
         List<CoordinatorRatingEntity> ratings = new ArrayList<>();
 
         int position = 1;
         for (RatingAggregateDTO aggregate : aggregates) {
-            CoordinatorEntity coordinator = coordinatorRepository.findById(aggregate.getSubjectId())
-                    .orElse(null);
+            CoordinatorEntity coordinator = coordinatorsById.get(aggregate.getSubjectId());
 
             if (coordinator == null) {
                 continue;
@@ -183,6 +186,32 @@ public class RatingServiceImpl implements RatingService {
 
     private LocalDateTime resolveMonthlyStart() {
         return LocalDateTime.now().minusMonths(1);
+    }
+
+    private Map<Integer, UserEntity> findUsersByAggregateSubjectIds(List<RatingAggregateDTO> aggregates) {
+        if (aggregates.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Integer> userIds = aggregates.stream()
+                .map(RatingAggregateDTO::getSubjectId)
+                .toList();
+
+        return userRepository.findAllByUserIdInAndDeletedAtIsNull(userIds).stream()
+                .collect(Collectors.toMap(UserEntity::getUserId, Function.identity()));
+    }
+
+    private Map<Integer, CoordinatorEntity> findCoordinatorsByAggregateSubjectIds(List<RatingAggregateDTO> aggregates) {
+        if (aggregates.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Integer> coordinatorIds = aggregates.stream()
+                .map(RatingAggregateDTO::getSubjectId)
+                .toList();
+
+        return coordinatorRepository.findAllByUserIdIn(coordinatorIds).stream()
+                .collect(Collectors.toMap(CoordinatorEntity::getUserId, Function.identity()));
     }
 
     private UserRatingResponse convertToUserRatingResponse(UserRatingEntity rating) {

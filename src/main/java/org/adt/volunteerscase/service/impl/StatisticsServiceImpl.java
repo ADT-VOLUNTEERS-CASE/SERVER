@@ -83,8 +83,7 @@ public class StatisticsServiceImpl implements StatisticsService {
 
         return CoordinatorStatisticsResponse.builder()
                 .totalCompletedEvents(eventRepository.countCompletedEventsByCoordinatorId(
-                        coordinatorId,
-                        EventStatus.COMPLETED
+                        coordinatorId
                 ))
                 .totalParticipants(userEventRepository.countCompletedEventParticipantsByCoordinatorId(
                         coordinatorId,
