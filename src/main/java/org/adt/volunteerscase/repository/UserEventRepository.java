@@ -3,6 +3,7 @@ package org.adt.volunteerscase.repository;
 import org.adt.volunteerscase.entity.UserEventEntity;
 import org.adt.volunteerscase.entity.UserEventId;
 import org.adt.volunteerscase.entity.event.EventEntity;
+import org.adt.volunteerscase.entity.event.EventStatus;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -124,6 +125,104 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
             @Param("coordinatorId") Integer coordinatorId,
             @Param("status") String status,
             Pageable pageable
+    );
+
+    @Query("""
+          SELECT COUNT(ue)
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE ue.user.userId = :userId
+            AND ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+            AND e.status = org.adt.volunteerscase.entity.event.EventStatus.COMPLETED
+          """)
+    long countCompletedParticipationsByUserId(
+            @Param("userId") Integer userId
+    );
+
+    @Query("""
+          SELECT COUNT(ue)
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE ue.user.userId = :userId
+            AND ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+            AND e.status = :eventStatus
+            AND e.dateTimestamp >= :from
+            AND e.dateTimestamp < :to
+          """)
+    long countCompletedParticipationsByUserIdBetween(
+            @Param("userId") Integer userId,
+            @Param("eventStatus") EventStatus eventStatus,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
+    @Query("""
+          SELECT COALESCE(SUM(e.weightMinutes), 0)
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE ue.user.userId = :userId
+            AND ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+            AND e.status = :eventStatus
+          """)
+    long sumCompletedParticipationWeightMinutesByUserId(
+            @Param("userId") Integer userId,
+            @Param("eventStatus") EventStatus eventStatus
+    );
+
+    @Query("""
+          SELECT COALESCE(SUM(e.weightMinutes), 0)
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE ue.user.userId = :userId
+            AND ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+            AND e.status = :eventStatus
+            AND e.dateTimestamp >= :from
+            AND e.dateTimestamp < :to
+          """)
+    long sumCompletedParticipationWeightMinutesByUserIdBetween(
+            @Param("userId") Integer userId,
+            @Param("eventStatus") EventStatus eventStatus,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
+    @Query("""
+          SELECT e.dateTimestamp
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE ue.user.userId = :userId
+            AND ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+            AND e.status = :eventStatus
+          ORDER BY e.dateTimestamp ASC
+          """)
+    List<LocalDateTime> findCompletedParticipationDatesByUserId(
+            @Param("userId") Integer userId,
+            @Param("eventStatus") EventStatus eventStatus
+    );
+
+    @Query("""
+          SELECT COUNT(ue)
+          FROM UserEventEntity ue
+          JOIN ue.event e
+          WHERE e.coordinator.userId = :coordinatorId
+            AND e.status = :eventStatus
+            AND ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+          """)
+    long countCompletedEventParticipantsByCoordinatorId(
+            @Param("coordinatorId") Integer coordinatorId,
+            @Param("eventStatus") EventStatus eventStatus
     );
 
 }

@@ -1,0 +1,33 @@
+package org.adt.volunteerscase.dto.event.response;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.adt.volunteerscase.dto.coordinator.CoordinatorEntityDTO;
+import org.adt.volunteerscase.dto.cover.CoverEntityDTO;
+import org.adt.volunteerscase.dto.location.LocationEntityDTO;
+import org.adt.volunteerscase.dto.tag.TagEntityDTO;
+import org.adt.volunteerscase.entity.event.EventStatus;
+
+import java.time.LocalDateTime;
+import java.util.Set;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class EventV2Response {
+
+    private Integer eventId;
+    private EventStatus status;
+    private String name;
+    private String description;
+    private CoverEntityDTO cover;
+    private CoordinatorEntityDTO coordinator;
+    private Integer maxCapacity;
+    private Integer weightMinutes;
+    private LocalDateTime dateTimestamp;
+    private LocationEntityDTO location;
+    private Set<TagEntityDTO> tags;
+}

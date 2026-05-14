@@ -58,6 +58,11 @@ public class EventEntity {
     @Column(name = "maxCapacity", nullable = false)
     private Integer maxCapacity;                                        //максимум участников >0
 
+    @NotNull(message = "weightMinutes is null")
+    @Min(value = 1, message = "Weight minutes must be greater than 0")
+    @Column(name = "weightMinutes", nullable = false, columnDefinition = "INTEGER DEFAULT 60")
+    @Builder.Default
+    private Integer weightMinutes = 60;
 
     @NotNull(message = "data is null")
     @Column(name = "dateTimestamp", nullable = false)
