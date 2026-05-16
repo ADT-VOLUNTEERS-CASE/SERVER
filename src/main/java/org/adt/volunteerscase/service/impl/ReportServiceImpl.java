@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -192,7 +193,11 @@ public class ReportServiceImpl implements ReportService {
             throw new IllegalStateException("font file fonts/DejaVuSans.ttf not found");
         }
 
-        byte[] fontBytes = resource.getInputStream().readAllBytes();
+        byte[] fontBytes;
+        try (InputStream inputStream = resource.getInputStream()) {
+            fontBytes = inputStream.readAllBytes();
+        }
+
 
         return BaseFont.createFont(
                 "DejaVuSans.ttf",

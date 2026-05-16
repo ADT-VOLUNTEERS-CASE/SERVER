@@ -430,7 +430,7 @@ public class DataLoader implements CommandLineRunner {
                 );
             }
 
-            if (user.getCreatedAt() == null || user.getCreatedAt().isAfter(createdAt)) {
+            if (user.getCreatedAt() == null) {
                 user.setCreatedAt(createdAt);
                 userRepository.save(user);
             }
