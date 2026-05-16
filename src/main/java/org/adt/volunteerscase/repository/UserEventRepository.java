@@ -13,6 +13,7 @@ import org.adt.volunteerscase.dto.userEvent.response.CoordinatorEventApplication
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.adt.volunteerscase.dto.rating.RatingAggregateDTO;
+import org.adt.volunteerscase.dto.report.UserReportRowDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -267,4 +268,33 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
           """)
     List<RatingAggregateDTO> findMonthlyUserRatingAggregates(@Param("from") LocalDateTime from);
 
+    @Query("""
+        SELECT new org.adt.volunteerscase.dto.report.UserReportRowDTO(
+            e.dateTimestamp,
+            e.name,
+            e.weightMinutes,
+            coordinatorUser.lastname,
+            coordinatorUser.firstname,
+            coordinatorUser.patronymic,
+            e.location.address,
+            ue.accepted,
+            ue.rejected,
+            ue.revoked,
+            ue.deletedAt,
+            e.status
+        )
+        FROM UserEventEntity ue
+        JOIN ue.event e
+        JOIN e.coordinator coordinator
+        JOIN coordinator.user coordinatorUser
+        WHERE ue.user.userId = :userId
+          AND e.dateTimestamp >= :from
+          AND e.dateTimestamp <= :to
+        ORDER BY e.dateTimestamp ASC, e.eventId ASC
+        """)
+    List<UserReportRowDTO> findUserReportRows(
+            @Param("userId") Integer userId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }
