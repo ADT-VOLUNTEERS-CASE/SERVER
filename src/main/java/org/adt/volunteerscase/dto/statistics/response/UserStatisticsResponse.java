@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -17,5 +19,6 @@ public class UserStatisticsResponse {
     private Long totalWorkedMinutes;
     private Integer currentParticipationStreakMonths;
     private Integer maxParticipationStreakMonths;
+    private List<MonthlyParticipationResponse> lastFiveMonthsParticipation;
 
 }

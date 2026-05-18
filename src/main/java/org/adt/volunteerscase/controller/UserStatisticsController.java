@@ -26,7 +26,7 @@ public class UserStatisticsController {
 
     @Operation(
             summary = "получение статистики текущего пользователя",
-            description = "Возвращает количество участий, отработанные минуты за месяц и за всё время, текущий и максимальный месячный стрик.",
+            description = "Возвращает количество участий, отработанные минуты за месяц и за всё время, текущий и максимальный месячный стрик, а также количество участий по месяцам за последние 5 месяцев.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "статистика успешно получена",
                             content = @Content(schema = @Schema(implementation = UserStatisticsResponse.class))),

@@ -1,6 +1,7 @@
 package org.adt.volunteerscase.unit.service;
 
 import org.adt.volunteerscase.dto.statistics.response.CoordinatorStatisticsResponse;
+import org.adt.volunteerscase.dto.statistics.response.MonthlyParticipationResponse;
 import org.adt.volunteerscase.dto.statistics.response.UserStatisticsResponse;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.event.EventStatus;
@@ -21,11 +22,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.TextStyle;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -86,6 +90,7 @@ class StatisticsServiceTest {
         List<LocalDateTime> participationDates = List.of(
                 currentMonth.minusMonths(3).atDay(1).atStartOfDay(),
                 currentMonth.minusMonths(2).atDay(1).atStartOfDay(),
+                currentMonth.minusMonths(2).atDay(2).atStartOfDay(),
                 currentMonth.minusMonths(1).atDay(1).atStartOfDay(),
                 currentMonth.atDay(1).atStartOfDay()
         );
@@ -118,6 +123,18 @@ class StatisticsServiceTest {
         assertThat(response.getMonthlyWorkedMinutes()).isEqualTo(240L);
         assertThat(response.getCurrentParticipationStreakMonths()).isEqualTo(4);
         assertThat(response.getMaxParticipationStreakMonths()).isEqualTo(4);
+        assertThat(response.getLastFiveMonthsParticipation())
+                .extracting(
+                        MonthlyParticipationResponse::getMonthName,
+                        MonthlyParticipationResponse::getParticipatedEvents
+                )
+                .containsExactly(
+                        tuple(monthName(currentMonth.minusMonths(4)), 0L),
+                        tuple(monthName(currentMonth.minusMonths(3)), 1L),
+                        tuple(monthName(currentMonth.minusMonths(2)), 2L),
+                        tuple(monthName(currentMonth.minusMonths(1)), 1L),
+                        tuple(monthName(currentMonth), 1L)
+                );
 
         verify(userRepository).findByUserIdAndDeletedAtIsNull(1);
         verify(userEventRepository).countCompletedParticipationsByUserId(1);
@@ -155,6 +172,9 @@ class StatisticsServiceTest {
         assertThat(response.getMonthlyWorkedMinutes()).isZero();
         assertThat(response.getCurrentParticipationStreakMonths()).isZero();
         assertThat(response.getMaxParticipationStreakMonths()).isZero();
+        assertThat(response.getLastFiveMonthsParticipation())
+                .hasSize(5)
+                .allSatisfy(month -> assertThat(month.getParticipatedEvents()).isZero());
     }
 
     @Test
@@ -201,5 +221,9 @@ class StatisticsServiceTest {
 
         verify(coordinatorRepository).findById(99);
         verifyNoInteractions(userEventRepository, eventRepository, userRepository);
+    }
+
+    private String monthName(YearMonth month) {
+        return month.getMonth().getDisplayName(TextStyle.FULL_STANDALONE, Locale.forLanguageTag("ru"));
     }
 }
