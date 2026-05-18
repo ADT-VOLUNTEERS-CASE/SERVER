@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.adt.volunteerscase.dto.report.CoordinatorReportRowDTO;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -160,4 +161,29 @@ public interface EventRepository extends JpaRepository<EventEntity, Integer> {
           ORDER BY COALESCE(SUM(e.weightMinutes), 0) DESC, e.coordinator.userId ASC
           """)
     List<RatingAggregateDTO> findMonthlyCoordinatorRatingAggregates(@Param("from") LocalDateTime from);
+
+    @Query("""
+        SELECT new org.adt.volunteerscase.dto.report.CoordinatorReportRowDTO(
+            e.dateTimestamp,
+            e.name,
+            e.weightMinutes,
+            COUNT(ue),
+            e.location.address,
+            e.status
+        )
+        FROM EventEntity e
+        LEFT JOIN e.userEvents ue ON ue.deletedAt IS NULL
+            AND ue.accepted = true
+            AND ue.revoked = false
+        WHERE e.coordinator.userId = :coordinatorId
+          AND e.dateTimestamp >= :from
+          AND e.dateTimestamp <= :to
+        GROUP BY e.eventId, e.dateTimestamp, e.name, e.weightMinutes, e.location.address, e.status
+        ORDER BY e.dateTimestamp ASC, e.eventId ASC
+        """)
+    List<CoordinatorReportRowDTO> findCoordinatorReportRows(
+            @Param("coordinatorId") Integer coordinatorId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }

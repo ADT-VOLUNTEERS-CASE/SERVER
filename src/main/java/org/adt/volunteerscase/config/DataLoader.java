@@ -73,6 +73,7 @@ public class DataLoader implements CommandLineRunner {
     private void createInitialData() {
 
         LocalDateTime seedNow = LocalDateTime.now().withSecond(0).withNano(0);
+        LocalDateTime seedRegisteredAt = seedNow.minusMonths(6);
 
         //creating users
         UserEntity admin = createUser(
@@ -83,7 +84,8 @@ public class DataLoader implements CommandLineRunner {
                 "+67676767671",
                 false,
                 true,
-                adminPassword
+                adminPassword,
+                seedRegisteredAt
         );
 
         UserEntity coordinatorUser = createUser(
@@ -94,7 +96,8 @@ public class DataLoader implements CommandLineRunner {
                 "+8888888888",
                 true,
                 false,
-                coordinatorPassword
+                coordinatorPassword,
+                seedRegisteredAt
         );
 
         UserEntity user = createUser(
@@ -105,7 +108,8 @@ public class DataLoader implements CommandLineRunner {
                 "+79999999999",
                 false,
                 false,
-                baseUserPassword
+                baseUserPassword,
+                seedRegisteredAt
         );
 
         UserEntity userTwo = createUser(
@@ -116,7 +120,8 @@ public class DataLoader implements CommandLineRunner {
                 "+79999999998",
                 false,
                 false,
-                baseUserTwoPassword
+                baseUserTwoPassword,
+                seedRegisteredAt
         );
         UserEntity userThree = createUser(
                 "thirdUserFirstname",
@@ -126,7 +131,8 @@ public class DataLoader implements CommandLineRunner {
                 "+79999999997",
                 false,
                 false,
-                baseUserThreePassword
+                baseUserThreePassword,
+                seedRegisteredAt
         );
 
         CoordinatorEntity coordinator = createCoordinatorProfile(coordinatorUser, "Main office");
@@ -396,7 +402,8 @@ public class DataLoader implements CommandLineRunner {
             String phoneNumber,
             boolean isCoordinator,
             boolean isAdmin,
-            String password
+            String password,
+            LocalDateTime createdAt
     ) {
         UserEntity userByEmail = userRepository.findByEmail(email).orElse(null);
         UserEntity userByPhone = userRepository.findByPhoneNumber(phoneNumber).orElse(null);
@@ -423,6 +430,11 @@ public class DataLoader implements CommandLineRunner {
                 );
             }
 
+            if (user.getCreatedAt() == null) {
+                user.setCreatedAt(createdAt);
+                userRepository.save(user);
+            }
+
             return user;
         }
 
@@ -439,6 +451,7 @@ public class DataLoader implements CommandLineRunner {
                 .isAdmin(isAdmin)
                 .isCoordinator(isCoordinator)
                 .userAuth(userAuth)
+                .createdAt(createdAt)
                 .build();
 
         userAuth.setUser(newUser);

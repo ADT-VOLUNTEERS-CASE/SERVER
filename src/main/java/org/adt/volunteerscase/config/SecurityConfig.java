@@ -80,6 +80,11 @@ public class SecurityConfig {
                                 .requestMatchers(HttpMethod.GET, "/api/v2/user/me").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/v2/user/rating").authenticated()
                                 .requestMatchers(HttpMethod.GET, "/api/v2/user/coordinator/rating").hasAuthority("ROLE_COORDINATOR")
+
+                                .requestMatchers(HttpMethod.GET, "/api/v2/user/coordinator/assemble_report_file").hasAuthority("ROLE_COORDINATOR")
+                                .requestMatchers(HttpMethod.GET, "/api/v2/user/admin/assemble_coordinator_report_file").hasAuthority("ROLE_ADMIN")
+                                .requestMatchers(HttpMethod.GET, "/api/v2/user/admin/assemble_user_report_file").hasAuthority("ROLE_ADMIN")
+
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
