@@ -1,9 +1,12 @@
 package org.adt.volunteerscase.service;
 
+import org.adt.volunteerscase.dto.page.response.PageResponse;
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
 import org.adt.volunteerscase.dto.user.response.GetUserV2Response;
+import org.adt.volunteerscase.dto.user.response.RegisteredEventResponse;
 import org.adt.volunteerscase.entity.user.UserEntity;
+import org.springframework.data.domain.Pageable;
 
 public interface UserService {
     GetUserResponse updateCoordinatorById(UpdateCoordinatorRequest request, Integer userId);
@@ -17,4 +20,6 @@ public interface UserService {
     GetUserResponse getCurrentUser(UserEntity currentUser);
 
     GetUserV2Response getCurrentUserV2(UserEntity currentUser);
+
+    PageResponse<RegisteredEventResponse> getRegisteredEvents(UserEntity currentUser, Pageable pageable);
 }

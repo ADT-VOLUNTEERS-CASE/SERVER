@@ -6,6 +6,7 @@ import org.adt.volunteerscase.entity.event.EventEntity;
 import org.adt.volunteerscase.entity.event.EventStatus;
 import org.adt.volunteerscase.entity.user.UserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -51,6 +52,28 @@ public interface UserEventRepository extends JpaRepository<UserEventEntity, User
     List<EventEntity> findActiveUpcomingEventsByUserId(
             @Param("userId") Integer userId,
             @Param("now") LocalDateTime now
+    );
+
+    @EntityGraph(attributePaths = {"event", "event.location", "event.coordinator", "event.coordinator.user"})
+    @Query(
+            value = """
+                    SELECT ue
+                    FROM UserEventEntity ue
+                    JOIN ue.event e
+                    WHERE ue.user.userId = :userId
+                      AND ue.deletedAt IS NULL
+                    ORDER BY e.dateTimestamp DESC, e.eventId DESC
+                    """,
+            countQuery = """
+                    SELECT COUNT(ue)
+                    FROM UserEventEntity ue
+                    WHERE ue.user.userId = :userId
+                      AND ue.deletedAt IS NULL
+                    """
+    )
+    Page<UserEventEntity> findRegisteredEventsByUserId(
+            @Param("userId") Integer userId,
+            Pageable pageable
     );
 
     @Query(

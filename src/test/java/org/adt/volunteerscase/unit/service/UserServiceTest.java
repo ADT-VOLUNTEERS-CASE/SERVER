@@ -1,10 +1,13 @@
 package org.adt.volunteerscase.unit.service;
 
+import org.adt.volunteerscase.dto.page.response.PageResponse;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
 import org.adt.volunteerscase.dto.user.response.GetUserV2Response;
+import org.adt.volunteerscase.dto.user.response.RegisteredEventResponse;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
+import org.adt.volunteerscase.entity.LocationEntity;
 import org.adt.volunteerscase.entity.TagEntity;
 import org.adt.volunteerscase.entity.UserEventEntity;
 import org.adt.volunteerscase.entity.event.EventEntity;
@@ -30,6 +33,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -447,5 +453,125 @@ public class UserServiceTest {
         verify(userEventRepository).findActiveUpcomingEventsByUserId(eq(2), any(LocalDateTime.class));
         verify(ratingService).getUserRatingPosition(2, RatingPeriod.MONTHLY);
         verify(ratingService).getUserRatingPosition(2, RatingPeriod.OVERALL);
+    }
+
+    @Test
+    void getRegisteredEvents_shouldReturnPagedRegisteredEvents() {
+        UserEntity currentUser = UserEntity.builder()
+                .userId(2)
+                .build();
+        Pageable pageable = PageRequest.of(0, 4);
+
+        UserEventEntity acceptedApplication = buildUserEvent(
+                buildEvent(10, "Accepted event", EventStatus.COMPLETED),
+                true,
+                false,
+                false
+        );
+        UserEventEntity rejectedApplication = buildUserEvent(
+                buildEvent(11, "Rejected event", EventStatus.ONGOING),
+                false,
+                true,
+                false
+        );
+        UserEventEntity revokedApplication = buildUserEvent(
+                buildEvent(12, "Revoked event", EventStatus.IN_PROGRESS),
+                false,
+                false,
+                true
+        );
+        UserEventEntity pendingApplication = buildUserEvent(
+                buildEvent(13, "Pending event", EventStatus.ONGOING),
+                false,
+                false,
+                false
+        );
+
+        when(userRepository.findByUserIdAndDeletedAtIsNull(2)).thenReturn(Optional.of(regularUser));
+        when(userEventRepository.findRegisteredEventsByUserId(2, pageable))
+                .thenReturn(new PageImpl<>(
+                        List.of(acceptedApplication, rejectedApplication, revokedApplication, pendingApplication),
+                        pageable,
+                        4
+                ));
+
+        PageResponse<RegisteredEventResponse> response = userService.getRegisteredEvents(currentUser, pageable);
+
+        assertThat(response.getContent()).hasSize(4);
+        assertThat(response.getPageNumber()).isZero();
+        assertThat(response.getPageSize()).isEqualTo(4);
+        assertThat(response.getTotalElements()).isEqualTo(4);
+        assertThat(response.getTotalPages()).isEqualTo(1);
+        assertThat(response.isFirst()).isTrue();
+        assertThat(response.isLast()).isTrue();
+
+        RegisteredEventResponse firstEvent = response.getContent().get(0);
+        assertThat(firstEvent.getEventId()).isEqualTo(10);
+        assertThat(firstEvent.getName()).isEqualTo("Accepted event");
+        assertThat(firstEvent.getEventStatus()).isEqualTo("COMPLETED");
+        assertThat(firstEvent.getApplicationStatus()).isEqualTo("ACCEPTED");
+        assertThat(firstEvent.getMaxCapacity()).isEqualTo(20);
+        assertThat(firstEvent.getWeightMinutes()).isEqualTo(90);
+        assertThat(firstEvent.getLocationAddress()).isEqualTo("Москва, тестовая улица");
+        assertThat(firstEvent.getCoordinatorId()).isEqualTo(1);
+        assertThat(firstEvent.getCoordinatorFullName()).isEqualTo("Координатор Анна Ивановна");
+
+        assertThat(response.getContent())
+                .extracting(RegisteredEventResponse::getApplicationStatus)
+                .containsExactly("ACCEPTED", "REJECTED", "REVOKED", "PENDING");
+
+        verify(userRepository).findByUserIdAndDeletedAtIsNull(2);
+        verify(userEventRepository).findRegisteredEventsByUserId(2, pageable);
+        verifyNoInteractions(ratingService);
+    }
+
+    @Test
+    void getRegisteredEvents_shouldThrowException_whenUserNotFound() {
+        UserEntity currentUser = UserEntity.builder()
+                .userId(99)
+                .build();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        when(userRepository.findByUserIdAndDeletedAtIsNull(99)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getRegisteredEvents(currentUser, pageable))
+                .isInstanceOf(UserNotFoundException.class)
+                .hasMessage("user with id - 99 not found");
+
+        verify(userRepository).findByUserIdAndDeletedAtIsNull(99);
+        verify(userEventRepository, never()).findRegisteredEventsByUserId(anyInt(), any(Pageable.class));
+    }
+
+    private EventEntity buildEvent(Integer eventId, String name, EventStatus status) {
+        LocationEntity location = LocationEntity.builder()
+                .locationId(1)
+                .address("Москва, тестовая улица")
+                .build();
+
+        return EventEntity.builder()
+                .eventId(eventId)
+                .name(name)
+                .status(status)
+                .maxCapacity(20)
+                .weightMinutes(90)
+                .dateTimestamp(LocalDateTime.of(2026, 5, 16, 14, 0))
+                .location(location)
+                .coordinator(coordinatorEntity)
+                .build();
+    }
+
+    private UserEventEntity buildUserEvent(
+            EventEntity event,
+            boolean accepted,
+            boolean rejected,
+            boolean revoked
+    ) {
+        return UserEventEntity.builder()
+                .user(regularUser)
+                .event(event)
+                .accepted(accepted)
+                .rejected(rejected)
+                .revoked(revoked)
+                .build();
     }
 }

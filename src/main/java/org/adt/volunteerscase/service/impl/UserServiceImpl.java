@@ -1,10 +1,12 @@
 package org.adt.volunteerscase.service.impl;
 
 import lombok.RequiredArgsConstructor;
+import org.adt.volunteerscase.dto.page.response.PageResponse;
 import org.adt.volunteerscase.dto.tag.TagEntityDTO;
 import org.adt.volunteerscase.dto.user.request.UpdateCoordinatorRequest;
 import org.adt.volunteerscase.dto.user.response.GetUserResponse;
 import org.adt.volunteerscase.dto.user.response.GetUserV2Response;
+import org.adt.volunteerscase.dto.user.response.RegisteredEventResponse;
 import org.adt.volunteerscase.dto.user.response.UserEventShortResponse;
 import org.adt.volunteerscase.entity.CoordinatorEntity;
 import org.adt.volunteerscase.entity.TagEntity;
@@ -22,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.adt.volunteerscase.entity.rating.RatingPeriod;
 import org.adt.volunteerscase.service.RatingService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -184,6 +188,16 @@ public class UserServiceImpl implements UserService {
         return convertToV2Response(freshUser, coordinatorEntity);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<RegisteredEventResponse> getRegisteredEvents(UserEntity currentUser, Pageable pageable) {
+        UserEntity freshUser = getFreshUser(currentUser);
+        Page<UserEventEntity> registeredEventsPage =
+                userEventRepository.findRegisteredEventsByUserId(freshUser.getUserId(), pageable);
+
+        return PageResponse.of(registeredEventsPage.map(this::convertToRegisteredEventResponse));
+    }
+
     private UserEntity getFreshUser(UserEntity currentUser) {
         return userRepository.findByUserIdAndDeletedAtIsNull(currentUser.getUserId())
                 .orElseThrow(() -> new UserNotFoundException("user with id - " + currentUser.getUserId() + " not found"));
@@ -253,6 +267,58 @@ public class UserServiceImpl implements UserService {
                 .maxCapacity(event.getMaxCapacity())
                 .dateTimestamp(event.getDateTimestamp())
                 .build();
+    }
+
+    private RegisteredEventResponse convertToRegisteredEventResponse(UserEventEntity userEvent) {
+        EventEntity event = userEvent.getEvent();
+        CoordinatorEntity coordinator = event.getCoordinator();
+        UserEntity coordinatorUser = coordinator != null ? coordinator.getUser() : null;
+
+        return RegisteredEventResponse.builder()
+                .eventId(event.getEventId())
+                .name(event.getName())
+                .eventStatus(String.valueOf(event.getStatus()))
+                .applicationStatus(resolveApplicationStatus(userEvent))
+                .maxCapacity(event.getMaxCapacity())
+                .weightMinutes(event.getWeightMinutes())
+                .dateTimestamp(event.getDateTimestamp())
+                .locationAddress(event.getLocation() != null ? event.getLocation().getAddress() : null)
+                .coordinatorId(coordinator != null ? coordinator.getUserId() : null)
+                .coordinatorFullName(coordinatorUser != null ? fullName(coordinatorUser) : null)
+                .build();
+    }
+
+    private String resolveApplicationStatus(UserEventEntity userEvent) {
+        if (userEvent.isRevoked()) {
+            return "REVOKED";
+        }
+        if (userEvent.isRejected()) {
+            return "REJECTED";
+        }
+        if (userEvent.isAccepted()) {
+            return "ACCEPTED";
+        }
+        return "PENDING";
+    }
+
+    private String fullName(UserEntity user) {
+        StringBuilder builder = new StringBuilder();
+
+        appendNamePart(builder, user.getLastname());
+        appendNamePart(builder, user.getFirstname());
+        appendNamePart(builder, user.getPatronymic());
+
+        return builder.isEmpty() ? null : builder.toString();
+    }
+
+    private void appendNamePart(StringBuilder builder, String value) {
+        if (value == null || value.isBlank()) {
+            return;
+        }
+        if (!builder.isEmpty()) {
+            builder.append(" ");
+        }
+        builder.append(value);
     }
 
     @Transactional(readOnly = true)
