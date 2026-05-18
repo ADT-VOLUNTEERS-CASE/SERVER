@@ -20,6 +20,6 @@ public class UserStatisticsResponse {
     private Integer currentParticipationStreakMonths;
     private Integer maxParticipationStreakMonths;
     @Builder.Default
-    private List<MonthlyParticipationResponse> lastFiveMonthsParticipation;
+    private List<MonthlyParticipationResponse> lastFiveMonthsParticipation = List.of();
 
 }
