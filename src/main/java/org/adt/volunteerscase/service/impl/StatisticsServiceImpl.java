@@ -54,16 +54,16 @@ public class StatisticsServiceImpl implements StatisticsService {
                 now
         );
 
-        long totalMinutes = userEventRepository.sumCompletedParticipationWeightMinutesByUserId(
+        long totalMinutes = safe(userEventRepository.sumCompletedParticipationWeightMinutesByUserId(
                 userId,
                 EventStatus.COMPLETED
-        );
-        long monthlyMinutes = userEventRepository.sumCompletedParticipationWeightMinutesByUserIdBetween(
+        ));
+        long monthlyMinutes = safe(userEventRepository.sumCompletedParticipationWeightMinutesByUserIdBetween(
                 userId,
                 EventStatus.COMPLETED,
                 monthStart,
                 now
-        );
+        ));
 
         List<LocalDateTime> participationDates = userEventRepository.findCompletedParticipationDatesByUserId(
                 userId,
@@ -102,9 +102,9 @@ public class StatisticsServiceImpl implements StatisticsService {
                         coordinatorId,
                         EventStatus.COMPLETED
                 ))
-                .totalWeightMinutes(eventRepository.sumCompletedEventWeightMinutesByCoordinatorId(
+                .totalWeightMinutes(safe(eventRepository.sumCompletedEventWeightMinutesByCoordinatorId(
                         coordinatorId
-                ))
+                )))
                 .build();
     }
 

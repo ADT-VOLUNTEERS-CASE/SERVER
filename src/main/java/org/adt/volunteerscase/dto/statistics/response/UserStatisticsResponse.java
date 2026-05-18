@@ -19,6 +19,7 @@ public class UserStatisticsResponse {
     private Long totalWorkedMinutes;
     private Integer currentParticipationStreakMonths;
     private Integer maxParticipationStreakMonths;
+    @Builder.Default
     private List<MonthlyParticipationResponse> lastFiveMonthsParticipation;
 
 }
