@@ -25,7 +25,8 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.time.Instant;
+import java.io.InputStream;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +47,7 @@ public class DataLoader implements CommandLineRunner {
     private final UserEventRepository userEventRepository;
     private final ObjectStorageService objectStorageService;
     private final CoverMapper coverMapper;
+    private final Clock clock;
 
 
     @Value("${ADMIN_PASSWORD}")
@@ -71,327 +73,151 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void createInitialData() {
+        // One reference time keeps event dates and the application history consistent.
+        LocalDateTime seedNow = LocalDateTime.now(clock).withSecond(0).withNano(0);
+        LocalDateTime registeredAt = seedNow.minusMonths(6);
 
-        LocalDateTime seedNow = LocalDateTime.now().withSecond(0).withNano(0);
-        LocalDateTime seedRegisteredAt = seedNow.minusMonths(6);
+        UserEntity admin = createUser("Алексей", "Смирнов", "Андреевич",
+                "admin@example.com", "+67676767671", false, true, adminPassword, registeredAt);
+        UserEntity coordinatorUser = createUser("Мария", "Иванова", "Сергеевна",
+                "coordinator@example.com", "+8888888888", true, false, coordinatorPassword, registeredAt);
+        UserEntity user = createUser("Анна", "Петрова", "Дмитриевна",
+                "user@example.com", "+79999999999", false, false, baseUserPassword, registeredAt);
+        UserEntity userTwo = createUser("Дмитрий", "Соколов", "Алексеевич",
+                "user.two@example.com", "+79999999998", false, false, baseUserTwoPassword, registeredAt);
+        UserEntity userThree = createUser("Елена", "Волкова", "Михайловна",
+                "user.three@example.com", "+79999999997", false, false, baseUserThreePassword, registeredAt);
+        CoordinatorEntity coordinator = createCoordinatorProfile(coordinatorUser, "Волонтёрский штаб, Москва");
 
-        //creating users
-        UserEntity admin = createUser(
-                "adminFirstname",
-                "adminLastname",
-                "adminPatronymic",
-                "admin@example.com",
-                "+67676767671",
-                false,
-                true,
-                adminPassword,
-                seedRegisteredAt
-        );
+        LocationEntity theater = createLocation("Театральная площадь, Москва",
+                "Сбор у фонтана перед Большим театром. Координатор встретит участников с табличкой.",
+                55.7589, 37.6185);
+        LocationEntity ostankino = createLocation("Улица Академика Королёва, 15к1, Москва",
+                "Сбор у главного входа. Возьмите заряженный телефон и удобную обувь.",
+                55.819682, 37.611663);
+        LocationEntity gorkyPark = createLocation("Парк Горького, Москва",
+                "Встреча у центрального входа. Перчатки, мешки и инвентарь выдаём на месте.",
+                55.729876, 37.603674);
+        LocationEntity shelter = createLocation("Улица Зорге, 21, Москва",
+                "Встреча у входа в приют. Корм и принадлежности передайте координатору.",
+                55.7860, 37.5100);
+        LocationEntity sokolniki = createLocation("Парк Сокольники, Москва",
+                "Волонтёрский штаб у главного входа. Здесь проходят инструктаж и выдача бейджей.",
+                55.793220, 37.679993);
 
-        UserEntity coordinatorUser = createUser(
-                "coordinatorFirstname",
-                "coordinatorLastname",
-                "coordinatorPatronymic",
-                "coordinator@example.com",
-                "+8888888888",
-                true,
-                false,
-                coordinatorPassword,
-                seedRegisteredAt
-        );
+        TagEntity ecology = createTag("Экология");
+        TagEntity animals = createTag("Помощь животным");
+        TagEntity culture = createTag("Культура");
+        TagEntity sport = createTag("Спорт");
+        TagEntity media = createTag("Медиа и фотография");
+        TagEntity organization = createTag("Организация мероприятий");
+        TagEntity social = createTag("Социальная помощь");
+        TagEntity education = createTag("Образование");
 
-        UserEntity user = createUser(
-                "userFirstname",
-                "userLastname",
-                "userPatronymic",
-                "user@example.com",
-                "+79999999999",
-                false,
-                false,
-                baseUserPassword,
-                seedRegisteredAt
-        );
+        setTagsToUser(Set.of(ecology, social, organization), admin);
+        setTagsToUser(Set.of(ecology, culture, organization, education), coordinatorUser);
+        setTagsToUser(Set.of(ecology, social, organization), user);
+        setTagsToUser(Set.of(animals, ecology, sport), userTwo);
+        setTagsToUser(Set.of(culture, media, education), userThree);
 
-        UserEntity userTwo = createUser(
-                "secondUserFirstname",
-                "secondUserLastname",
-                "secondUserPatronymic",
-                "user.two@example.com",
-                "+79999999998",
-                false,
-                false,
-                baseUserTwoPassword,
-                seedRegisteredAt
-        );
-        UserEntity userThree = createUser(
-                "thirdUserFirstname",
-                "thirdUserLastname",
-                "thirdUserPatronymic",
-                "user.three@example.com",
-                "+79999999997",
-                false,
-                false,
-                baseUserThreePassword,
-                seedRegisteredAt
-        );
+        // Upcoming events have open registration and useful daytime start times.
+        EventEntity parkCleanup = createEvent(EventStatus.ONGOING,
+                "Чистый парк: волонтёрская уборка",
+                "Поможем привести в порядок дорожки и газоны парка Горького. Соберём мусор раздельно, "
+                        + "а после уборки обсудим простые экологичные привычки. Опыт не нужен, инвентарь выдадим.",
+                "images/park-cleanup.png", coordinator, 25, 180,
+                seedNow.toLocalDate().plusDays(1).atTime(11, 0), gorkyPark, Set.of(ecology, social));
+        EventEntity animalShelter = createEvent(EventStatus.ONGOING,
+                "Добрые лапы: помощь приюту",
+                "Погуляем с собаками, поможем убрать вольеры и разобрать корм. Перед началом сотрудники "
+                        + "приюта проведут инструктаж. Наденьте одежду, которую не жалко испачкать.",
+                "images/animal-shelter.png", coordinator, 15, 240,
+                seedNow.toLocalDate().plusDays(3).atTime(10, 0), shelter, Set.of(animals, social));
+        EventEntity festival = createEvent(EventStatus.ONGOING,
+                "Семейный фестиваль в Сокольниках",
+                "Встретим гостей, поможем с навигацией и проведением творческих мастер-классов. "
+                        + "Для волонтёров предусмотрены инструктаж, перерывы и горячий чай.",
+                "images/park_sokolniky.png", coordinator, 30, 300,
+                seedNow.toLocalDate().plusDays(5).atTime(12, 0), sokolniki, Set.of(culture, organization, education));
+        EventEntity theaterDay = createEvent(EventStatus.ONGOING,
+                "Театральный день: встречаем зрителей",
+                "Поможем зрителям найти площадки городской театральной программы, раздадим буклеты "
+                        + "и поддержим работу информационной стойки. Перед сменой познакомимся с маршрутом.",
+                "images/theater_square.png", coordinator, 20, 240,
+                seedNow.toLocalDate().plusDays(7).atTime(10, 0), theater, Set.of(culture, organization));
+        EventEntity photoMarathon = createEvent(EventStatus.ONGOING,
+                "Фотомарафон добрых дел",
+                "Снимем истории городских волонтёров и поможем участникам пройти маршрут фотомарафона. "
+                        + "Можно снимать на телефон. Лучшие кадры с согласия участников войдут в итоговый альбом.",
+                "images/photo-marathon.png", coordinator, 12, 180,
+                seedNow.toLocalDate().plusDays(10).atTime(9, 0), ostankino, Set.of(media, culture, sport));
+        createEvent(EventStatus.ONGOING,
+                "Экофорум: команда волонтёров",
+                "Открыт набор в команду городского экофорума. Будем регистрировать гостей, помогать "
+                        + "спикерам и рассказывать о раздельном сборе отходов. Обучение пройдёт перед началом смены.",
+                "images/eco-forum.png", coordinator, 40, 360,
+                seedNow.toLocalDate().plusDays(14).atTime(11, 0), sokolniki, Set.of(ecology, education, organization));
+        EventEntity briefing = createEvent(EventStatus.ONGOING,
+                "Фотокоманда: практический инструктаж",
+                "Небольшая встреча команды фотомарафона: проверим оборудование, распределим задачи "
+                        + "и потренируемся снимать репортаж. Все места в этой группе уже заняты заявками.",
+                "images/photo-marathon.png", coordinator, 2, 90,
+                seedNow.toLocalDate().plusDays(2).atTime(18, 0), ostankino, Set.of(media, education));
 
-        CoordinatorEntity coordinator = createCoordinatorProfile(coordinatorUser, "Main office");
+        // Each volunteer has accepted and pending applications, plus events still available to join.
+        createUserEvent(user, parkCleanup, ApplicationStatus.ACCEPTED, seedNow.minusDays(4));
+        createUserEvent(userTwo, parkCleanup, ApplicationStatus.PENDING, seedNow.minusDays(2));
+        createUserEvent(userThree, parkCleanup, ApplicationStatus.REVOKED, seedNow.minusDays(3));
+        createUserEvent(user, animalShelter, ApplicationStatus.PENDING, seedNow.minusDays(1));
+        createUserEvent(userTwo, animalShelter, ApplicationStatus.ACCEPTED, seedNow.minusDays(3));
+        createUserEvent(user, festival, ApplicationStatus.REJECTED, seedNow.minusDays(3));
+        createUserEvent(userTwo, festival, ApplicationStatus.REVOKED, seedNow.minusDays(2));
+        createUserEvent(userThree, festival, ApplicationStatus.ACCEPTED, seedNow.minusDays(4));
+        createUserEvent(userThree, theaterDay, ApplicationStatus.PENDING, seedNow.minusDays(1));
+        createUserEvent(userThree, photoMarathon, ApplicationStatus.ACCEPTED, seedNow.minusDays(2));
+        createUserEvent(userTwo, briefing, ApplicationStatus.ACCEPTED, seedNow.minusDays(3));
+        createUserEvent(userThree, briefing, ApplicationStatus.PENDING, seedNow.minusDays(1));
 
-        //creating locations
-        LocationEntity firstLocation = createLocation(
-                "Театральная площадь, Москва",
-                "театральная площадь в Москве",
-                55.7589,
-                37.6185
-        );
-        LocationEntity secondLocation = createLocation(
-                "Королёва 15к1, Москва",
-                "Останкинская телебашня",
-                55.819682,
-                37.611663
-        );
-        LocationEntity thirdLocation = createLocation(
-                "Парк Горького, Москва",
-                "центральный вход в парк",
-                55.729876,
-                37.603674
-        );
-        LocationEntity fourthLocation = createLocation(
-                "Лужники, Москва",
-                "волонтёрский штаб у большой спортивной арены",
-                55.715765,
-                37.553696
-        );
-        LocationEntity fifthLocation = createLocation(
-                "Сокольники, Москва",
-                "павильон для регистраций и выдачи инвентаря",
-                55.793220,
-                37.679993
-        );
+        // A deleted application is hidden from the user and allows a new application.
+        UserEventEntity deleted = createUserEvent(user, theaterDay, ApplicationStatus.REVOKED, seedNow.minusDays(4));
+        deleted.setDeletedAt(deleted.getRevokedAt());
+        userEventRepository.saveAndFlush(deleted);
 
-        //creating tags
-        Set<TagEntity> adminTags = new HashSet<>();
-        TagEntity adminTag1 = createTag("adminTag1", admin);
-        TagEntity adminTag2 = createTag("adminTag2", admin);
-        TagEntity adminTag3 = createTag("adminTag3", admin);
-        adminTags.add(adminTag1);
-        adminTags.add(adminTag2);
-        adminTags.add(adminTag3);
+        EventEntity recentCleanup = createEvent(EventStatus.COMPLETED,
+                "Чистый берег: итоги волонтёрской уборки",
+                "Команда собрала мусор у прогулочных дорожек и передала вторсырьё на переработку. "
+                        + "Спасибо всем участникам за помощь парку!",
+                "images/park-cleanup.png", coordinator, 25, 180,
+                seedNow.toLocalDate().minusDays(1).atTime(11, 0), gorkyPark, Set.of(ecology, social));
+        createUserEvent(user, recentCleanup, ApplicationStatus.ACCEPTED, recentCleanup.getDateTimestamp().minusDays(7));
+        createUserEvent(userTwo, recentCleanup, ApplicationStatus.ACCEPTED, recentCleanup.getDateTimestamp().minusDays(5));
+        createUserEvent(userThree, recentCleanup, ApplicationStatus.ACCEPTED, recentCleanup.getDateTimestamp().minusDays(4));
 
-        Set<TagEntity> userTags = new HashSet<>();
-        TagEntity userTag1 = createTag("userTag1", user);
-        TagEntity userTag2 = createTag("userTag2", user);
-        TagEntity userTag3 = createTag("userTag3", user);
-        userTags.add(userTag1);
-        userTags.add(userTag2);
-        userTags.add(userTag3);
+        EventEntity recentFestival = createEvent(EventStatus.COMPLETED,
+                "Город добрых дел: завершённый фестиваль",
+                "Волонтёры помогли провести семейные мастер-классы, встретили гостей и организовали "
+                        + "сбор вещей для благотворительных организаций.",
+                "images/park_sokolniky.png", coordinator, 30, 300,
+                seedNow.toLocalDate().minusDays(10).atTime(12, 0), sokolniki, Set.of(culture, social, organization));
+        createUserEvent(user, recentFestival, ApplicationStatus.ACCEPTED, recentFestival.getDateTimestamp().minusDays(6));
+        createUserEvent(userThree, recentFestival, ApplicationStatus.ACCEPTED, recentFestival.getDateTimestamp().minusDays(5));
+        createUserEvent(userTwo, recentFestival, ApplicationStatus.REVOKED, recentFestival.getDateTimestamp().minusDays(4));
 
-        Set<TagEntity> coordinatorTags = new HashSet<>();
-        TagEntity coordinatorTag1 = createTag("coordinatorTag1", coordinatorUser);
-        TagEntity coordinatorTag2 = createTag("coordinatorTag2", coordinatorUser);
-        TagEntity coordinatorTag3 = createTag("coordinatorTag3", coordinatorUser);
-        coordinatorTags.add(coordinatorTag1);
-        coordinatorTags.add(coordinatorTag2);
-        coordinatorTags.add(coordinatorTag3);
-
-        Set<TagEntity> userTwoTags = new HashSet<>();
-        TagEntity userTwoTag1 = createTag("userTwoTag1", userTwo);
-        TagEntity userTwoTag2 = createTag("userTwoTag2", userTwo);
-        TagEntity userTwoTag3 = createTag("userTwoTag3", userTwo);
-        userTwoTags.add(userTwoTag1);
-        userTwoTags.add(userTwoTag2);
-        userTwoTags.add(userTwoTag3);
-
-        Set<TagEntity> userThreeTags = new HashSet<>();
-        TagEntity userThreeTag1 = createTag("userThreeTag1", userThree);
-        TagEntity userThreeTag2 = createTag("userThreeTag2", userThree);
-        TagEntity userThreeTag3 = createTag("userThreeTag3", userThree);
-        userThreeTags.add(userThreeTag1);
-        userThreeTags.add(userThreeTag2);
-        userThreeTags.add(userThreeTag3);
-
-        setTagsToUser(adminTags, admin);
-        setTagsToUser(userTags, user);
-        setTagsToUser(coordinatorTags, coordinatorUser);
-        setTagsToUser(userTwoTags, userTwo);
-        setTagsToUser(userThreeTags, userThree);
-
-        Set<TagEntity> firstEventTags = new HashSet<>(Set.of(adminTag1, coordinatorTag1, coordinatorTag2));
-        Set<TagEntity> secondEventTags = new HashSet<>(Set.of(adminTag2, userTag1, coordinatorTag2));
-        Set<TagEntity> parkCleanupTags = new HashSet<>(Set.of(userTag1, userTag2, coordinatorTag1));
-        Set<TagEntity> animalShelterTags = new HashSet<>(Set.of(userTwoTag1, userTwoTag2, coordinatorTag2));
-        Set<TagEntity> medicalSupportTags = new HashSet<>(Set.of(userThreeTag1, userThreeTag2, coordinatorTag3));
-        Set<TagEntity> logisticsHubTags = new HashSet<>(Set.of(userTag2, userThreeTag2, adminTag2));
-        Set<TagEntity> photoMarathonTags = new HashSet<>(Set.of(userTag3, userTwoTag3, adminTag1));
-        Set<TagEntity> futureCompletedTags = new HashSet<>(Set.of(userTag1, userThreeTag1, adminTag3));
-        Set<TagEntity> pastInProgressTags = new HashSet<>(Set.of(userTag2, userTwoTag2, coordinatorTag1));
-        Set<TagEntity> ecoForumTags = new HashSet<>(Set.of(userTwoTag1, userThreeTag3, coordinatorTag2));
-
-
-        //creationEvents
-        EventEntity firstEvent = createEvent(
-                EventStatus.COMPLETED,
-                "first event",
-                "first event, completed",
-                null,
-                coordinator,
-                100,
-                seedNow.minusDays(60),
-                firstLocation,
-                firstEventTags
-        );
-
-        EventEntity secondEvent = createEvent(
-                EventStatus.COMPLETED,
-                "second event",
-                "second event, completed",
-                null,
-                coordinator,
-                67,
-                seedNow.minusDays(61),
-                secondLocation,
-                secondEventTags
-        );
-
-        EventEntity parkCleanupEvent = createEvent(
-                EventStatus.ONGOING,
-                "park cleanup day",
-                "future event for the base user: two matching tags and high popularity",
-                "images/park-cleanup.png",
-                coordinator,
-                120,
-                seedNow.plusDays(7),
-                thirdLocation,
-                parkCleanupTags
-        );
-
-        EventEntity animalShelterEvent = createEvent(
-                EventStatus.IN_PROGRESS,
-                "animal shelter weekend",
-                "future event for the second base user: two matching tags and high popularity",
-                "images/animal-shelter.png",
-                coordinator,
-                80,
-                seedNow.plusDays(10),
-                fourthLocation,
-                animalShelterTags
-        );
-
-        EventEntity festivalEvent = createEvent(
-                EventStatus.ONGOING,
-                "festival in park",
-                "future event for the third base user: two matching tags and active applications",
-                "images/park_sokolniky.png",
-                coordinator,
-                50,
-                seedNow.plusDays(14),
-                fifthLocation,
-                medicalSupportTags
-        );
-
-        EventEntity theaterDayEvent = createEvent(
-                EventStatus.IN_PROGRESS,
-                "theater day",
-                "future event with mixed tags for recommendation tie checks",
-                "images/theater_square.png",
-                coordinator,
-                90,
-                seedNow.plusDays(18),
-                firstLocation,
-                logisticsHubTags
-        );
-
-        EventEntity photoMarathonEvent = createEvent(
-                EventStatus.ONGOING,
-                "photo marathon",
-                "future event with lower popularity for ranking checks",
-                "images/photo-marathon.png",
-                coordinator,
-                70,
-                seedNow.plusDays(21),
-                secondLocation,
-                photoMarathonTags
-        );
-
-        EventEntity futureCompletedEvent = createEvent(
-                EventStatus.COMPLETED,
-                "future completed event",
-                "should be excluded by status even though its date is in the future",
-                null,
-                coordinator,
-                40,
-                seedNow.plusDays(30),
-                thirdLocation,
-                futureCompletedTags
-        );
-
-        EventEntity pastInProgressEvent = createEvent(
-                EventStatus.IN_PROGRESS,
-                "past in progress event",
-                "should be excluded by date even though its status is not completed",
-                null,
-                coordinator,
-                40,
-                seedNow.minusDays(5),
-                fourthLocation,
-                pastInProgressTags
-        );
-
-        EventEntity ecoForumEvent = createEvent(
-                EventStatus.IN_PROGRESS,
-                "eco forum booth",
-                "future event with zero active popularity for sorting checks",
-                "images/eco-forum.png",
-                coordinator,
-                60,
-                seedNow.plusDays(35),
-                fifthLocation,
-                ecoForumTags
-        );
-
-        EventEntity recentCompletedEvent = createEvent(
-                EventStatus.COMPLETED,
-                "recent completed event",
-                "recent completed event for statistics checks",
-                null,
-                coordinator,
-                30,
-                seedNow.minusDays(10),
-                thirdLocation,
-                Set.of(userTag1, coordinatorTag1)
-        );
-
-
-        createUserEvent(user, recentCompletedEvent, true, false, false, null);
-        createUserEvent(userTwo, recentCompletedEvent, true, false, false, null);
-
-        createUserEvent(admin, parkCleanupEvent, true, false, false, null);
-        createUserEvent(userTwo, parkCleanupEvent, false, false, false, null);
-        createUserEvent(userThree, parkCleanupEvent, false, false, false, null);
-
-        createUserEvent(admin, animalShelterEvent, true, false, false, null);
-        createUserEvent(user, animalShelterEvent, false, false, false, null);
-        createUserEvent(userThree, animalShelterEvent, false, false, false, null);
-
-        createUserEvent(user, festivalEvent, true, false, false, null);
-        createUserEvent(userTwo, festivalEvent, false, false, false, null);
-        createUserEvent(admin, festivalEvent, false, false, true, null);
-
-        createUserEvent(admin, theaterDayEvent, true, false, false, null);
-        createUserEvent(userTwo, theaterDayEvent, false, false, false, null);
-        createUserEvent(user, theaterDayEvent, false, false, false, seedNow.minusDays(1));
-
-        createUserEvent(admin, photoMarathonEvent, true, false, false, null);
-        createUserEvent(userThree, photoMarathonEvent, false, false, false, null);
-
-        createUserEvent(admin, futureCompletedEvent, true, false, false, null);
-        createUserEvent(userTwo, futureCompletedEvent, false, false, false, null);
-
-        createUserEvent(admin, pastInProgressEvent, true, false, false, null);
-        createUserEvent(userThree, pastInProgressEvent, false, false, false, null);
-
-        createUserEvent(admin, ecoForumEvent, false, false, true, null);
-
+        // Four previous calendar months populate participation charts and overall ratings.
+        for (int monthsAgo = 1; monthsAgo <= 4; monthsAgo++) {
+            LocalDateTime date = seedNow.toLocalDate().minusMonths(monthsAgo).withDayOfMonth(10).atTime(10, 0);
+            EventEntity past = createEvent(EventStatus.COMPLETED,
+                    "Помощь приюту: встреча " + date.toLocalDate(),
+                    "Волонтёры выгуляли собак, убрали территорию и подготовили корм. "
+                            + "Завершённая смена учтена в истории участия и волонтёрских часах.",
+                    "images/animal-shelter.png", coordinator, 15, 120 + monthsAgo * 30,
+                    date, shelter, Set.of(animals, social));
+            createUserEvent(user, past, ApplicationStatus.ACCEPTED, date.minusDays(7));
+            createUserEvent(userTwo, past, ApplicationStatus.ACCEPTED, date.minusDays(6));
+            if (monthsAgo <= 2) {
+                createUserEvent(userThree, past, ApplicationStatus.ACCEPTED, date.minusDays(5));
+            }
+        }
     }
 
     private UserEntity createUser(
@@ -494,7 +320,7 @@ public class DataLoader implements CommandLineRunner {
                 .orElseThrow(() -> new LocationNotFoundException("location with address - " + address + " not found"));
     }
 
-    private TagEntity createTag(String tagName, UserEntity currentUser) {
+    private TagEntity createTag(String tagName) {
 
         if (tagRepository.existsByTagName(tagName)) {
             return tagRepository.findByTagName(tagName)
@@ -509,7 +335,7 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void setTagsToUser(Set<TagEntity> tags, UserEntity currentUser) {
-        currentUser.setTags(tags);
+        currentUser.setTags(new HashSet<>(tags));
         userRepository.save(currentUser);
     }
 
@@ -520,6 +346,7 @@ public class DataLoader implements CommandLineRunner {
             String coverResourcePath,
             CoordinatorEntity coordinator,
             Integer maxCapacity,
+            Integer weightMinutes,
             LocalDateTime dateTimestamp,
             LocationEntity location,
             Set<TagEntity> tags
@@ -559,9 +386,10 @@ public class DataLoader implements CommandLineRunner {
                 .cover(cover)
                 .coordinator(coordinator)
                 .maxCapacity(maxCapacity)
+                .weightMinutes(weightMinutes)
                 .dateTimestamp(dateTimestamp)
                 .location(location)
-                .tags(tags)
+                .tags(new HashSet<>(tags))
                 .build();
 
         try {
@@ -581,8 +409,8 @@ public class DataLoader implements CommandLineRunner {
 
         StoredObjectResult uploaded = null;
 
-        try {
-            byte[] content = resource.getInputStream().readAllBytes();
+        try (InputStream input = resource.getInputStream()) {
+            byte[] content = input.readAllBytes();
             BufferedImage image = ImageIO.read(new ByteArrayInputStream(content));
 
             if (image == null) {
@@ -614,7 +442,7 @@ public class DataLoader implements CommandLineRunner {
                     CoverEntity.builder()
                             .link(uploaded.getLink())
                             .metadata(coverMapper.encodeMetadata(metadata))
-                            .createdAt(Instant.now().toEpochMilli())
+                            .createdAt(clock.millis())
                             .deletedAt(null)
                             .build()
             );
@@ -650,25 +478,14 @@ public class DataLoader implements CommandLineRunner {
     private UserEventEntity createUserEvent(
             UserEntity user,
             EventEntity event,
-            boolean accepted,
-            boolean rejected,
-            boolean revoked,
-            LocalDateTime deletedAt
+            ApplicationStatus status,
+            LocalDateTime createdAt
     ) {
-        if (user == null) {
-            throw new IllegalStateException("createUserEvent: user is null");
-        }
-        if (event == null) {
-            throw new IllegalStateException("createUserEvent: event is null");
-        }
-        if (user.getUserId() == null) {
-            throw new IllegalStateException("createUserEvent: userId is null for " + user.getEmail());
-        }
-        if (event.getEventId() == null) {
-            throw new IllegalStateException("createUserEvent: eventId is null for event " + event.getName());
+        if (createdAt.isBefore(user.getCreatedAt()) || !createdAt.isBefore(event.getDateTimestamp())) {
+            throw new IllegalStateException("seed application must be created after the user and before the event");
         }
 
-        UserEventEntity userEvent = userEventRepository.findByUserAndEvent(user, event)
+        UserEventEntity application = userEventRepository.findByUserAndEvent(user, event)
                 .orElseGet(() -> UserEventEntity.builder()
                         .id(UserEventId.builder()
                                 .userId(user.getUserId())
@@ -676,23 +493,24 @@ public class DataLoader implements CommandLineRunner {
                                 .build())
                         .user(user)
                         .event(event)
-                        .accepted(false)
-                        .rejected(false)
-                        .revoked(false)
                         .build());
 
-        LocalDateTime actionTime = LocalDateTime.now().withSecond(0).withNano(0);
+        LocalDateTime actionTime = createdAt.plusHours(2);
+        application.setCreatedAt(createdAt);
+        application.setAccepted(status == ApplicationStatus.ACCEPTED);
+        application.setRejected(status == ApplicationStatus.REJECTED);
+        application.setRevoked(status == ApplicationStatus.REVOKED);
+        application.setRejectReason(status == ApplicationStatus.REJECTED
+                ? "Для этой смены требуется опыт организации мероприятий. Можно подать заявку на другую смену."
+                : null);
+        application.setRejectedAt(status == ApplicationStatus.REJECTED ? actionTime : null);
+        application.setRevokedAt(status == ApplicationStatus.REVOKED ? actionTime : null);
+        application.setDeletedAt(null);
 
-        userEvent.setAccepted(accepted);
-        userEvent.setRejected(rejected);
-        userEvent.setRevoked(revoked);
-        userEvent.setRejectReason(rejected ? "seed reject" : null);
-        userEvent.setRejectedAt(rejected ? actionTime : null);
-        userEvent.setRevokedAt(revoked ? actionTime : null);
-        userEvent.setDeletedAt(deletedAt);
-
-        return userEventRepository.saveAndFlush(userEvent);
+        return userEventRepository.saveAndFlush(application);
     }
 
-
+    private enum ApplicationStatus {
+        PENDING, ACCEPTED, REJECTED, REVOKED
+    }
 }
