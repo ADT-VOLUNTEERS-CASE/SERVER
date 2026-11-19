@@ -2,6 +2,9 @@ FROM maven:3.9-eclipse-temurin-17-noble AS builder
 
 WORKDIR /app
 
+# Interim mitigation for CVE-2026-114938 (Java4Shell), also during Maven builds.
+ENV JAVA_TOOL_OPTIONS="-XX:-UseBASE64Intrinsics"
+
 # Build argument to control test execution (default: skip tests in Docker)
 ARG RUN_TESTS=false
 
@@ -33,4 +36,5 @@ COPY --from=builder /app/target/VolunteersCase-*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Keep the mitigation in JVM arguments so Compose JAVA_TOOL_OPTIONS cannot replace it.
+ENTRYPOINT ["java", "-XX:-UseBASE64Intrinsics", "-jar", "app.jar"]
