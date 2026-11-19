@@ -44,6 +44,9 @@ services:
       S3_PUBLIC_BASE_URL: ${S3_PUBLIC_BASE_URL}
       S3_PATH_STYLE_ACCESS: ${S3_PATH_STYLE_ACCESS:-false}
       S3_COVER_PREFIX: ${S3_COVER_PREFIX:-covers}
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Europe/Moscow
+      DEMO_MOBILE_DEBUG_LOGIN: ${DEMO_MOBILE_DEBUG_LOGIN:-true}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create
       SPRING_PROFILES_ACTIVE: prod
     ports:
       - "8080:8080"

@@ -33,6 +33,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class DataLoaderTest {
@@ -96,6 +98,9 @@ class DataLoaderTest {
             cover.setCoverId(nextCoverId++);
             return cover;
         });
+        when(eventRepository.existsByLocationAndDateTimestamp(any(), any())).thenAnswer(call ->
+                events.values().stream().anyMatch(e -> e.getLocation() == call.getArgument(0)
+                        && e.getDateTimestamp().equals(call.getArgument(1))));
         when(eventRepository.saveAndFlush(any())).thenAnswer(call -> {
             EventEntity event = call.getArgument(0);
             event.setEventId(events.size() + 1);
@@ -116,15 +121,16 @@ class DataLoaderTest {
         LocalDateTime now = LocalDateTime.parse(timestamp);
         load(now);
 
-        assertThat(events).hasSize(13);
+        assertThat(events).hasSize(85);
+        assertThat(users).hasSize(106);
         assertThat(events.values()).filteredOn(e -> e.getStatus() == EventStatus.ONGOING)
-                .hasSize(7).allSatisfy(e -> {
-                    assertThat(e.getDateTimestamp()).isAfter(now).isBefore(now.plusDays(15));
+                .hasSize(43).allSatisfy(e -> {
+                    assertThat(e.getDateTimestamp()).isAfter(now).isBefore(now.plusDays(37));
                 });
         assertThat(events.values()).filteredOn(e -> e.getStatus() == EventStatus.COMPLETED)
-                .hasSize(6).allSatisfy(e -> assertThat(e.getDateTimestamp()).isBefore(now));
+                .hasSize(42).allSatisfy(e -> assertThat(e.getDateTimestamp()).isBefore(now));
 
-        assertThat(applications).hasSize(29);
+        assertThat(applications).hasSize(1547);
         assertThat(applications.values()).allSatisfy(a -> {
             assertThat(a.getCreatedAt()).isAfterOrEqualTo(a.getUser().getCreatedAt())
                     .isBefore(a.getEvent().getDateTimestamp()).isBeforeOrEqualTo(now);
@@ -179,6 +185,16 @@ class DataLoaderTest {
         assertThat(events.values()).anyMatch(e -> e.getMaxCapacity() == activeApplications(e));
         assertThat(events.values()).allSatisfy(e -> assertThat(activeApplications(e)).isLessThanOrEqualTo(e.getMaxCapacity()));
 
+        assertThat(applications.values()).filteredOn(a -> a.getUser() == users.get("user@example.com") && a.isAccepted()
+                && a.getEvent().getStatus() == EventStatus.COMPLETED).hasSizeGreaterThan(25);
+        assertThat(applications.values()).filteredOn(a -> !a.isAccepted() && !a.isRejected() && !a.isRevoked()
+                && a.getEvent().getCoordinator().getUser().getEmail().equals("coordinator@example.com"))
+                .hasSizeGreaterThan(50);
+        verify(passwordEncoder).encode("base_pass");
+        verify(passwordEncoder).encode("admin_pass");
+        verify(passwordEncoder).encode("coordinator_pass");
+        verify(storage, times(85)).uploadCover(anyString(), eq("image/png"), any(byte[].class));
+
         assertThat(events.values()).allSatisfy(e -> {
             assertThat(e.getCover()).isNotNull();
             assertThat(e.getWeightMinutes()).isPositive();
@@ -210,6 +226,7 @@ class DataLoaderTest {
                 "baseUserThreePassword", "coordinatorPassword")) {
             ReflectionTestUtils.setField(loader, field, "test-password");
         }
+        ReflectionTestUtils.setField(loader, "mobileDebugLogin", true);
         loader.run();
     }
 }
