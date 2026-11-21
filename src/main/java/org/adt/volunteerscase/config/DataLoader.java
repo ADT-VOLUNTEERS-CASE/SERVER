@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,20 +52,23 @@ public class DataLoader implements CommandLineRunner {
     private final Clock clock;
 
 
-    @Value("${ADMIN_PASSWORD}")
+    @Value("${demo.mobile-debug-login:true}")
+    private boolean mobileDebugLogin;
+
+    @Value("${ADMIN_PASSWORD:admin_pass}")
     private String adminPassword;
 
-    @Value("${BASE_USER_PASSWORD}")
+    @Value("${BASE_USER_PASSWORD:base_pass}")
     private String baseUserPassword;
 
-    @Value("${BASE_USER_TWO_PASSWORD}")
+    @Value("${BASE_USER_TWO_PASSWORD:base_pass}")
     private String baseUserTwoPassword;
 
-    @Value("${BASE_USER_THREE_PASSWORD}")
+    @Value("${BASE_USER_THREE_PASSWORD:base_pass}")
     private String baseUserThreePassword;
 
 
-    @Value("${COORDINATOR_PASSWORD}")
+    @Value("${COORDINATOR_PASSWORD:coordinator_pass}")
     private String coordinatorPassword;
 
     @Override
@@ -78,11 +83,11 @@ public class DataLoader implements CommandLineRunner {
         LocalDateTime registeredAt = seedNow.minusMonths(6);
 
         UserEntity admin = createUser("Алексей", "Смирнов", "Андреевич",
-                "admin@example.com", "+67676767671", false, true, adminPassword, registeredAt);
+                "admin@example.com", "+67676767671", false, true, mobileDebugLogin ? "admin_pass" : adminPassword, registeredAt);
         UserEntity coordinatorUser = createUser("Мария", "Иванова", "Сергеевна",
-                "coordinator@example.com", "+8888888888", true, false, coordinatorPassword, registeredAt);
+                "coordinator@example.com", "+8888888888", true, false, mobileDebugLogin ? "coordinator_pass" : coordinatorPassword, registeredAt);
         UserEntity user = createUser("Анна", "Петрова", "Дмитриевна",
-                "user@example.com", "+79999999999", false, false, baseUserPassword, registeredAt);
+                "user@example.com", "+79999999999", false, false, mobileDebugLogin ? "base_pass" : baseUserPassword, registeredAt);
         UserEntity userTwo = createUser("Дмитрий", "Соколов", "Алексеевич",
                 "user.two@example.com", "+79999999998", false, false, baseUserTwoPassword, registeredAt);
         UserEntity userThree = createUser("Елена", "Волкова", "Михайловна",
@@ -216,6 +221,88 @@ public class DataLoader implements CommandLineRunner {
             createUserEvent(userTwo, past, ApplicationStatus.ACCEPTED, date.minusDays(6));
             if (monthsAgo <= 2) {
                 createUserEvent(userThree, past, ApplicationStatus.ACCEPTED, date.minusDays(5));
+            }
+        }
+        createPresentationData(seedNow, coordinator, List.of(user, userTwo, userThree),
+                List.of(gorkyPark, shelter, sokolniki, theater, ostankino, sokolniki),
+                List.of(Set.of(ecology, social), Set.of(animals, social), Set.of(culture, organization),
+                        Set.of(culture, education), Set.of(media, sport), Set.of(ecology, education)));
+    }
+
+    /** Larger, deterministic dataset for the mobile debug accounts and paginated screens. */
+    private void createPresentationData(LocalDateTime now, CoordinatorEntity mainCoordinator,
+                                        List<UserEntity> debugVolunteers, List<LocationEntity> locations,
+                                        List<Set<TagEntity>> interests) {
+        String[] firstnames = {"Александр", "Михаил", "Иван", "Артём", "Максим", "Никита", "Роман", "Павел",
+                "Анна", "Мария", "Софья", "Дарья", "Полина", "Алиса", "Виктория", "Ксения"};
+        String[] lastnames = {"Морозов", "Лебедев", "Козлов", "Новиков", "Орлов", "Егоров"};
+        List<UserEntity> volunteers = new ArrayList<>();
+        for (int i = 0; i < 96; i++) {
+            boolean female = i % firstnames.length >= 8;
+            String lastname = lastnames[i / firstnames.length] + (female ? "а" : "");
+            UserEntity volunteer = createUser(firstnames[i % firstnames.length], lastname,
+                    female ? "Александровна" : "Александрович", "volunteer.%03d@example.com".formatted(i + 1),
+                    "+7900%07d".formatted(i + 1), false, false, baseUserTwoPassword, now.minusMonths(12).plusDays(i % 60));
+            setTagsToUser(interests.get(i % interests.size()), volunteer);
+            volunteers.add(volunteer);
+        }
+        List<CoordinatorEntity> coordinators = new ArrayList<>();
+        coordinators.add(mainCoordinator);
+        for (int i = 0; i < 5; i++) {
+            UserEntity owner = createUser(firstnames[i], lastnames[i], "Сергеевич",
+                    "coordinator.%02d@example.com".formatted(i + 1), "+7910%07d".formatted(i + 1),
+                    true, false, coordinatorPassword, now.minusMonths(12));
+            setTagsToUser(interests.get(i), owner);
+            coordinators.add(createCoordinatorProfile(owner, "Городской волонтёрский центр, отдел " + (i + 1)));
+        }
+
+        String[] titles = {"Зелёный маршрут", "Друзья приюта", "Парк объединяет", "Культурный выходной",
+                "Город в объективе", "Экология начинается с нас"};
+        String[] images = {"park-cleanup.png", "animal-shelter.png", "park_sokolniky.png",
+                "theater_square.png", "photo-marathon.png", "eco-forum.png"};
+        String[] descriptions = {
+                "Присоединяйтесь к экологической команде: очистим прогулочные дорожки и отсортируем вторсырьё. Инвентарь выдаём, опыт не требуется.",
+                "Поможем животным: погуляем с собаками, подготовим корм и наведём порядок. Сотрудники проведут инструктаж по безопасности.",
+                "Встречаем гостей семейной программы, помогаем на мастер-классах и отвечаем на вопросы участников. В команде всегда есть опытный наставник.",
+                "Помогаем посетителям культурной программы: навигация, регистрация и сопровождение гостей. Перед сменой познакомимся с площадкой.",
+                "Собираем фотоистории добрых дел и поддерживаем участников городского маршрута. Для съёмки подойдёт телефон, согласие героев обязательно.",
+                "Расскажем гостям о бережном потреблении, поможем спикерам и организуем зону раздельного сбора. До смены пройдём обучение."};
+        for (int index = 0; index < 72; index++) {
+            boolean completed = index >= 36;
+            int shift = index % 36;
+            int theme = shift % titles.length;
+            LocalDateTime date = completed
+                    ? now.toLocalDate().minusDays(shift < 15 ? 2L + shift : 2 + shift * 4L).atTime(10 + theme, 30)
+                    : now.toLocalDate().plusDays(1 + shift).atTime(10 + theme, 30);
+            CoordinatorEntity owner = shift % 3 != 2 ? mainCoordinator : coordinators.get(1 + shift / 3 % 5);
+            EventEntity event = createEvent(completed ? EventStatus.COMPLETED : EventStatus.ONGOING,
+                    titles[theme] + " — " + date.toLocalDate(), descriptions[theme]
+                            + " Смена длится " + (2 + theme % 4) + " ч. Встречаемся за 15 минут до начала; предусмотрены перерывы и чай.",
+                    "images/" + images[theme], owner, 40 + shift % 4 * 10, (2 + theme % 4) * 60,
+                    date, locations.get(theme), interests.get(theme));
+            LocalDateTime applied = completed ? date.minusDays(8) : now.minusDays(6);
+            for (int d = 0; d < debugVolunteers.size(); d++) {
+                // Keep a sizeable personalised catalogue free of existing applications.
+                if ((shift + d) % 4 == 0) continue;
+                ApplicationStatus status = completed ? ApplicationStatus.ACCEPTED
+                        : switch ((shift + d) % 7) {
+                            case 0 -> ApplicationStatus.REJECTED;
+                            case 1 -> ApplicationStatus.REVOKED;
+                            case 2, 3 -> ApplicationStatus.PENDING;
+                            default -> ApplicationStatus.ACCEPTED;
+                        };
+                createUserEvent(debugVolunteers.get(d), event, status, applied.plusHours(d));
+            }
+            int participants = 12 + shift % 16;
+            for (int j = 0; j < participants; j++) {
+                UserEntity volunteer = volunteers.get((shift * 7 + j * 5) % volunteers.size());
+                ApplicationStatus status = switch (j % 10) {
+                    case 0 -> ApplicationStatus.REJECTED;
+                    case 1 -> ApplicationStatus.REVOKED;
+                    case 2, 3 -> completed ? ApplicationStatus.ACCEPTED : ApplicationStatus.PENDING;
+                    default -> ApplicationStatus.ACCEPTED;
+                };
+                createUserEvent(volunteer, event, status, applied.plusHours(j % 12));
             }
         }
     }
@@ -438,7 +525,7 @@ public class DataLoader implements CommandLineRunner {
                     .eTag(uploaded.getETag())
                     .build();
 
-            return coverRepository.save(
+            CoverEntity cover = coverRepository.save(
                     CoverEntity.builder()
                             .link(uploaded.getLink())
                             .metadata(coverMapper.encodeMetadata(metadata))
@@ -446,6 +533,7 @@ public class DataLoader implements CommandLineRunner {
                             .deletedAt(null)
                             .build()
             );
+            return cover;
         } catch (IOException ex) {
             if (uploaded != null) {
                 objectStorageService.deleteObject(uploaded.getObjectKey());

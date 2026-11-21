@@ -1,4 +1,4 @@
-FROM maven:3.9-eclipse-temurin-17-noble AS builder
+FROM maven:3.9-eclipse-temurin-21-noble AS builder
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN if [ "$RUN_TESTS" = "true" ]; then \
     fi
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-noble
+FROM eclipse-temurin:21-jre-noble
 
 WORKDIR /app
 
